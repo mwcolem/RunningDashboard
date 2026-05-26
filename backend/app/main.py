@@ -1,5 +1,7 @@
 import logging
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,7 +14,7 @@ from app.routers import activities, gear, health, stats, training
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         gc.get_client()
     except Exception as e:
@@ -39,15 +41,15 @@ app.include_router(stats.router)
 
 
 @app.exception_handler(GarminConnectTooManyRequestsError)
-async def too_many_requests_handler(request: Request, exc: GarminConnectTooManyRequestsError):
+async def too_many_requests_handler(request: Request, exc: GarminConnectTooManyRequestsError) -> JSONResponse:
     return JSONResponse(status_code=429, content={"detail": "Garmin rate limit hit — try again later"})
 
 
 @app.exception_handler(GarminConnectAuthenticationError)
-async def auth_error_handler(request: Request, exc: GarminConnectAuthenticationError):
+async def auth_error_handler(request: Request, exc: GarminConnectAuthenticationError) -> JSONResponse:
     return JSONResponse(status_code=401, content={"detail": "Garmin authentication failed"})
 
 
 @app.get("/api/ping")
-def ping():
+def ping() -> dict[str, str]:
     return {"status": "ok"}

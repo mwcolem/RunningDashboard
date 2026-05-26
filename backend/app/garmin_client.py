@@ -1,7 +1,7 @@
 import logging
 import time
 from datetime import date, timedelta
-from typing import Any
+from typing import Any, cast
 
 from garminconnect import Garmin
 
@@ -45,67 +45,67 @@ def get_client() -> Garmin:
 def get_activities(start: int = 0, limit: int = 20) -> list[dict[str, Any]]:
     key = f"activities:{start}:{limit}"
     if (cached := _cached(key, TTL_ACTIVITIES)) is not None:
-        return cached  # type: ignore[return-value]
+        return cast(list[dict[str, Any]], cached)
     data = get_client().get_activities(start, limit, activitytype="running")
     _store(key, data)
-    return data  # type: ignore[return-value]
+    return cast(list[dict[str, Any]], data)
 
 
 def get_activity(activity_id: int) -> dict[str, Any]:
     key = f"activity:{activity_id}"
     if (cached := _cached(key, TTL_ACTIVITY_DETAIL)) is not None:
-        return cached  # type: ignore[return-value]
+        return cast(dict[str, Any], cached)
     data = get_client().get_activity(activity_id)
     _store(key, data)
-    return data  # type: ignore[return-value]
+    return cast(dict[str, Any], data)
 
 
 def get_activity_splits(activity_id: int) -> dict[str, Any]:
     key = f"splits:{activity_id}"
     if (cached := _cached(key, TTL_ACTIVITY_DETAIL)) is not None:
-        return cached  # type: ignore[return-value]
+        return cast(dict[str, Any], cached)
     data = get_client().get_activity_splits(activity_id)
     _store(key, data)
-    return data  # type: ignore[return-value]
+    return cast(dict[str, Any], data)
 
 
 def get_max_metrics(d: str | None = None) -> dict[str, Any]:
     d = d or _today()
     key = f"max_metrics:{d}"
     if (cached := _cached(key, TTL_TRAINING)) is not None:
-        return cached  # type: ignore[return-value]
+        return cast(dict[str, Any], cached)
     data = get_client().get_max_metrics(d)
     _store(key, data)
-    return data  # type: ignore[return-value]
+    return cast(dict[str, Any], data)
 
 
 def get_training_readiness(d: str | None = None) -> dict[str, Any]:
     d = d or _today()
     key = f"training_readiness:{d}"
     if (cached := _cached(key, TTL_TRAINING)) is not None:
-        return cached  # type: ignore[return-value]
+        return cast(dict[str, Any], cached)
     data = get_client().get_training_readiness(d)
     _store(key, data)
-    return data  # type: ignore[return-value]
+    return cast(dict[str, Any], data)
 
 
 def get_training_status(d: str | None = None) -> dict[str, Any]:
     d = d or _today()
     key = f"training_status:{d}"
     if (cached := _cached(key, TTL_TRAINING)) is not None:
-        return cached  # type: ignore[return-value]
+        return cast(dict[str, Any], cached)
     data = get_client().get_training_status(d)
     _store(key, data)
-    return data  # type: ignore[return-value]
+    return cast(dict[str, Any], data)
 
 
 def get_race_predictions() -> dict[str, Any]:
     key = "race_predictions"
     if (cached := _cached(key, TTL_TRAINING)) is not None:
-        return cached  # type: ignore[return-value]
+        return cast(dict[str, Any], cached)
     data = get_client().get_race_predictions()
     _store(key, data)
-    return data  # type: ignore[return-value]
+    return cast(dict[str, Any], data)
 
 
 def _today() -> str:
@@ -116,81 +116,79 @@ def get_user_summary(d: str | None = None) -> dict[str, Any]:
     d = d or _today()
     key = f"summary:{d}"
     if (cached := _cached(key, TTL_HEALTH)) is not None:
-        return cached  # type: ignore[return-value]
+        return cast(dict[str, Any], cached)
     data = get_client().get_user_summary(d)
     _store(key, data)
-    return data  # type: ignore[return-value]
+    return cast(dict[str, Any], data)
 
 
 def get_heart_rates(d: str | None = None) -> dict[str, Any]:
     d = d or _today()
     key = f"heart_rates:{d}"
     if (cached := _cached(key, TTL_HEALTH)) is not None:
-        return cached  # type: ignore[return-value]
+        return cast(dict[str, Any], cached)
     data = get_client().get_heart_rates(d)
     _store(key, data)
-    return data  # type: ignore[return-value]
+    return cast(dict[str, Any], data)
 
 
 def get_hrv_data(d: str | None = None) -> dict[str, Any]:
     d = d or _today()
     key = f"hrv:{d}"
     if (cached := _cached(key, TTL_HEALTH)) is not None:
-        return cached  # type: ignore[return-value]
+        return cast(dict[str, Any], cached)
     data = get_client().get_hrv_data(d)
     _store(key, data)
-    return data  # type: ignore[return-value]
+    return cast(dict[str, Any], data)
 
 
 def get_stress_data(d: str | None = None) -> dict[str, Any]:
     d = d or _today()
     key = f"stress:{d}"
     if (cached := _cached(key, TTL_HEALTH)) is not None:
-        return cached  # type: ignore[return-value]
+        return cast(dict[str, Any], cached)
     data = get_client().get_stress_data(d)
     _store(key, data)
-    return data  # type: ignore[return-value]
+    return cast(dict[str, Any], data)
 
 
 def get_spo2_data(d: str | None = None) -> dict[str, Any]:
     d = d or _today()
     key = f"spo2:{d}"
     if (cached := _cached(key, TTL_HEALTH)) is not None:
-        return cached  # type: ignore[return-value]
+        return cast(dict[str, Any], cached)
     data = get_client().get_spo2_data(d)
     _store(key, data)
-    return data  # type: ignore[return-value]
+    return cast(dict[str, Any], data)
 
 
 def get_sleep_data(d: str | None = None) -> dict[str, Any]:
     d = d or _today()
     key = f"sleep:{d}"
     if (cached := _cached(key, TTL_HEALTH)) is not None:
-        return cached  # type: ignore[return-value]
+        return cast(dict[str, Any], cached)
     data = get_client().get_sleep_data(d)
     _store(key, data)
-    return data  # type: ignore[return-value]
+    return cast(dict[str, Any], data)
 
 
 def get_body_battery(d: str | None = None) -> list[Any]:
     d = d or _today()
     key = f"body_battery:{d}"
     if (cached := _cached(key, TTL_HEALTH)) is not None:
-        return cached  # type: ignore[return-value]
+        return cast(list[Any], cached)
     data = get_client().get_body_battery(d)
     _store(key, data)
-    return data  # type: ignore[return-value]
+    return cast(list[Any], data)
 
 
 def get_mileage_summary() -> dict[str, float]:
-    """Fetch year-to-date running activities and compute week/month/year km totals."""
     key = "mileage_summary"
     if (cached := _cached(key, TTL_HEALTH)) is not None:
-        return cached  # type: ignore[return-value]
+        return cast(dict[str, float], cached)
 
     today = date.today()
     year_start = today.replace(month=1, day=1).isoformat()
-    # Monday of the current week
     week_start = (today - timedelta(days=today.weekday())).isoformat()
     month_start = today.replace(day=1).isoformat()
     today_str = today.isoformat()
@@ -223,7 +221,7 @@ def get_mileage_summary() -> dict[str, float]:
 def get_shoes() -> list[dict[str, Any]]:
     key = "shoes"
     if (cached := _cached(key, TTL_GEAR)) is not None:
-        return cached  # type: ignore[return-value]
+        return cast(list[dict[str, Any]], cached)
 
     client = get_client()
     profile = client.get_user_profile()
@@ -235,7 +233,7 @@ def get_shoes() -> list[dict[str, Any]]:
         if g.get("gearTypeName") == "Shoes" and g.get("gearStatusName") == "active"
     ]
 
-    result = []
+    result: list[dict[str, Any]] = []
     uuid_to_idx: dict[str, int] = {}
     for shoe in active_shoes:
         uuid = shoe["uuid"]
@@ -273,13 +271,13 @@ def get_shoes() -> list[dict[str, Any]]:
 
     result.sort(key=lambda s: s["last_used"] or "", reverse=True)
     _store(key, result)
-    return result  # type: ignore[return-value]
+    return result
 
 
 def get_active_goals() -> list[dict[str, Any]]:
     key = "goals_active"
     if (cached := _cached(key, TTL_TRAINING)) is not None:
-        return cached  # type: ignore[return-value]
+        return cast(list[dict[str, Any]], cached)
     data = get_client().get_goals(status="active")
     _store(key, data)
-    return data  # type: ignore[return-value]
+    return cast(list[dict[str, Any]], data)

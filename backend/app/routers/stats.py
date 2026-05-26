@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter
 
@@ -11,12 +12,12 @@ GOALS_FILE = Path(__file__).resolve().parents[3] / "goals.json"
 
 
 @router.get("/mileage")
-def get_mileage():
+def get_mileage() -> Any:
     return gc.get_mileage_summary()
 
 
 @router.get("/goals")
-def get_goals():
+def get_goals() -> Any:
     if not GOALS_FILE.exists():
         return []
 
