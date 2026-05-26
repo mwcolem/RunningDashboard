@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-RunningDashboard is a personal Garmin Connect dashboard with a Python/FastAPI backend and TypeScript/React frontend. It uses the [garminconnect](https://pypi.org/project/garminconnect/) library to pull running activities, health metrics, and training load data on-demand. See `ROADMAP.md` for full implementation history.
+RunningDashboard is a personal Garmin Connect dashboard with a Python/FastAPI backend and TypeScript/React frontend. It uses the [garminconnect](https://pypi.org/project/garminconnect/) library to pull running activities, health metrics, training load, and gear data on-demand. See `ROADMAP.md` for full implementation history.
 
 ## Setup
 
@@ -50,6 +50,8 @@ cd backend && .venv/bin/mypy app/
 cd backend && .venv/bin/ruff check app/
 ```
 
+CI runs pytest + mypy on every push/PR via `.github/workflows/ci.yml`. Frontend type-check (`tsc --noEmit`) runs in a parallel job.
+
 ## Architecture
 
 ### Module roles
@@ -58,24 +60,33 @@ cd backend && .venv/bin/ruff check app/
 
 - **`backend/app/main.py`** — FastAPI app with lifespan (attempts Garmin login on startup, logs warning and continues if it fails), CORS middleware, and global exception handlers (`GarminConnectTooManyRequestsError` → 429, `GarminConnectAuthenticationError` → 401).
 - **`backend/app/config.py`** — `pydantic-settings` reads `.env` for `GARMIN_EMAIL`, `GARMIN_PASSWORD`, `CACHE_TTL_SECONDS`, `CORS_ORIGINS`.
-- **`backend/app/garmin_client.py`** — Singleton Garmin client wrapper with in-memory TTL cache (`dict[str, tuple[float, Any]]`). All Garmin API calls go through here. Cache TTLs: activities list 600s, daily health metrics 300s, training metrics 600s, activity detail/splits 3600s (immutable).
+- **`backend/app/garmin_client.py`** — Singleton Garmin client wrapper with in-memory TTL cache (`dict[str, tuple[float, Any]]`). All Garmin API calls go through here. Cache TTLs: activities list 600s, daily health metrics 300s, training metrics 600s, activity detail/splits 3600s (immutable), gear 3600s. Uses `cast()` throughout to satisfy mypy strict mode over the untyped garminconnect library.
 - **`backend/app/routers/activities.py`** — `/api/activities` (paginated, filtered to running), `/api/activities/{id}`, `/api/activities/{id}/splits`.
 - **`backend/app/routers/health.py`** — `/api/health/heart-rate`, `/api/health/hrv`, `/api/health/stress`, `/api/health/spo2`, `/api/health/sleep`, `/api/health/summary`, `/api/health/body-battery`. All accept `?date=YYYY-MM-DD`, default to today.
-- **`backend/app/routers/training.py`** — `/api/training/max-metrics`, `/api/training/readiness`, `/api/training/status`, `/api/training/race-predictions`. Date endpoints default to today.
+- **`backend/app/routers/training.py`** — `/api/training/max-metrics`, `/api/training/readiness`, `/api/training/status`, `/api/training/race-predictions`. Date endpoints default to today. Readiness unwraps a list response to a single object.
+- **`backend/app/routers/stats.py`** — `/api/stats/mileage` (year/month/week totals in miles), `/api/stats/goals` (reads `goals.json` at project root, joins with mileage data to compute progress).
+- **`backend/app/routers/gear.py`** — `/api/gear/shoes` (active shoes from Garmin gear service, with stats and last-used date from recent activity scan).
+- **`backend/tests/`** — pytest suite; all tests mock the Garmin client so no credentials are needed in CI.
+
+**Config files**
+
+- **`goals.json`** (project root) — local mileage goal config. Each entry: `{"name": "...", "target_mi": 1023, "period": "year"}`. Period is `"year"`, `"month"`, or `"week"`. The backend reads this on each `/api/stats/goals` request and computes current progress from live mileage data.
 
 **Frontend**
 
 - **`frontend/src/api/client.ts`** — Fetch wrapper and all TanStack Query hooks with typed responses. All server state flows through here.
 - **`frontend/src/types/garmin.ts`** — TypeScript interfaces for all API response shapes.
-- **`frontend/src/components/Layout.tsx`** — Desktop sidebar nav + mobile fixed bottom nav + `ErrorBoundary` wrapping `<Outlet />`.
-- **`frontend/src/components/ActivityCard.tsx`** — Expandable row; fetches splits on click via `useActivitySplits(id, enabled)`.
-- **`frontend/src/components/SplitsTable.tsx`** — Lap table rendering `lapDTOs` (pace, HR, elevation per lap).
+- **`frontend/src/components/Layout.tsx`** — Desktop sidebar nav (4 items: Dashboard, Activities, Gear, Health) + mobile fixed bottom nav + `ErrorBoundary` wrapping `<Outlet />`.
+- **`frontend/src/components/ActivityCard.tsx`** — Expandable row; fetches splits on click via `useActivitySplits(id, enabled)`. Distances and pace displayed in miles/min-per-mile.
+- **`frontend/src/components/SplitsTable.tsx`** — Lap table rendering `lapDTOs` (pace in min/mi, distance in mi, HR, elevation per lap).
+- **`frontend/src/components/GoalBar.tsx`** — Progress bar for a mileage goal; shows `current / target mi — X remaining`.
 - **`frontend/src/components/MetricCard.tsx`** — Reusable label/value card with optional unit and sub-label.
 - **`frontend/src/components/HeartRateChart.tsx`** — Recharts `LineChart` with downsampling to ~200 points.
 - **`frontend/src/components/Skeleton.tsx`** — `Skeleton`, `SkeletonCard`, `SkeletonRow`, `SkeletonChart` — all use `animate-pulse`.
 - **`frontend/src/components/ErrorBoundary.tsx`** — React class component; catches render errors and shows a styled fallback.
-- **`frontend/src/pages/Dashboard.tsx`** — Readiness score (color-coded 0–100), VO2 max, training status, last 10 runs, race predictions. Each section skeletons independently.
+- **`frontend/src/pages/Dashboard.tsx`** — Readiness score (color-coded 0–100), VO2 max, training status, mileage summary (week/month/year), goals, recent shoes (last 2 used with progress bars), race predictions. Each section skeletons independently.
 - **`frontend/src/pages/Activities.tsx`** — Paginated list (20/page) of `ActivityCard` components with previous/next pagination.
+- **`frontend/src/pages/Gear.tsx`** — Active shoes sorted by most recently used; each card shows name, make/model, total miles, progress bar toward retirement limit (color-coded blue → orange at 80% → red at limit), last run date, and run count.
 - **`frontend/src/pages/Health.tsx`** — Date picker, HR line chart, HRV/stress/SpO2/sleep metric cards, sleep stage breakdown. Each metric skeletons independently.
 
 ### Key design details
@@ -83,6 +94,8 @@ cd backend && .venv/bin/ruff check app/
 - **Sync route handlers**: `garminconnect` uses blocking I/O. Route handlers use `def` not `async def` — FastAPI auto-runs them in a threadpool.
 - **Rate limit defense**: Garmin has aggressive 429 rate limits on SSO endpoints. The in-memory TTL cache in `garmin_client.py` is the primary defense. Lifespan login failure is non-fatal — server starts and retries on first request.
 - **No database**: Data is fetched on-demand from Garmin. Backend caches in-memory (TTL dict), frontend caches via TanStack Query `staleTime`. No local persistence beyond OAuth tokens.
+- **Gear last-used detection**: `get_shoes()` scans up to 30 recent activities via `get_activity_gear(activity_id)` to find the last date each shoe was worn. Stops early once all active shoes are found. Results sorted by `last_used` descending.
 - **Vite proxy**: `vite.config.ts` proxies `/api` requests to `http://localhost:8001`. CORS middleware on the backend is also configured as a fallback.
 - **Responsive layout**: Desktop uses a `w-48` sidebar (`hidden md:flex`). Mobile uses a fixed bottom nav (`md:hidden`). Some activity stats are `hidden sm:inline` to prevent overflow on small screens.
 - **No user-facing auth**: Personal localhost dashboard. No auth between frontend and backend.
+- **All distances in miles**: Activity distances, pace (min/mi), splits, mileage summaries, and shoe mileage all use US customary units throughout.
