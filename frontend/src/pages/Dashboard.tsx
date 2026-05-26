@@ -1,6 +1,7 @@
 import { useActivities, useTrainingReadiness, useMaxMetrics, useTrainingStatus, useRacePredictions } from "../api/client";
 import type { Activity, RacePrediction } from "../types/garmin";
 import MetricCard from "../components/MetricCard";
+import { Skeleton, SkeletonCard, SkeletonRow } from "../components/Skeleton";
 
 function formatPace(speedMs: number): string {
   if (!speedMs) return "—";
@@ -83,10 +84,15 @@ export default function Dashboard() {
       <h1 className="text-2xl font-semibold text-gray-800">Dashboard</h1>
 
       {/* Training overview */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white rounded-xl border border-gray-200 p-5 col-span-1 flex flex-col items-center justify-center">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col items-center justify-center">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Readiness</p>
-          {score !== undefined ? (
+          {readiness.isLoading ? (
+            <div className="space-y-2 flex flex-col items-center mt-1">
+              <Skeleton className="h-9 w-12" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+          ) : score !== undefined ? (
             <>
               <p className={`text-4xl font-bold ${readinessColor(score)}`}>{score}</p>
               {qualifier && <p className="text-xs text-gray-400 mt-1 capitalize">{qualifier.toLowerCase()}</p>}
@@ -95,32 +101,54 @@ export default function Dashboard() {
             <p className="text-2xl font-semibold text-gray-300">—</p>
           )}
         </div>
-        <MetricCard
-          label="VO2 Max"
-          value={vo2Max !== undefined ? vo2Max.toFixed(1) : undefined}
-          unit="mL/kg/min"
-        />
-        <MetricCard
-          label="Training Status"
-          value={statusKey ? statusKey.charAt(0) + statusKey.slice(1).toLowerCase() : undefined}
-        />
+        {maxMetrics.isLoading || trainingStatus.isLoading ? (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        ) : (
+          <>
+            <MetricCard
+              label="VO2 Max"
+              value={vo2Max !== undefined ? vo2Max.toFixed(1) : undefined}
+              unit="mL/kg/min"
+            />
+            <MetricCard
+              label="Training Status"
+              value={statusKey ? statusKey.charAt(0) + statusKey.slice(1).toLowerCase() : undefined}
+            />
+          </>
+        )}
       </div>
 
       {/* Recent runs */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Recent Runs</h2>
-        {activities.isLoading && <p className="text-sm text-gray-400">Loading...</p>}
-        {activities.error && <p className="text-sm text-red-500">Failed to load activities: {activities.error.message}</p>}
-        {activities.data?.map((a) => <ActivityRow key={a.activityId} activity={a} />)}
+        {activities.isLoading
+          ? Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
+          : activities.error
+          ? <p className="text-sm text-red-500">Failed to load activities: {activities.error.message}</p>
+          : activities.data?.map((a) => <ActivityRow key={a.activityId} activity={a} />)
+        }
       </div>
 
       {/* Race predictions */}
-      {predictions.length > 0 && (
+      {racePreds.isLoading ? (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <Skeleton className="h-3 w-28 mb-4" />
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex justify-between py-2 border-b border-gray-100 last:border-0">
+              <Skeleton className="h-3.5 w-8" />
+              <Skeleton className="h-3.5 w-16" />
+            </div>
+          ))}
+        </div>
+      ) : predictions.length > 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Race Predictions</h2>
           {predictions.map((p, i) => <RacePredictionRow key={i} pred={p} />)}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

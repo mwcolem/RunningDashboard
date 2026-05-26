@@ -44,11 +44,11 @@ export default function ActivityCard({ activity }: Props) {
           <p className="text-sm font-medium text-gray-800">{activity.activityName}</p>
           <p className="text-xs text-gray-400 mt-0.5">{date}</p>
         </div>
-        <div className="flex items-center gap-5 text-sm text-gray-600">
+        <div className="flex items-center gap-3 sm:gap-5 text-sm text-gray-600 flex-wrap justify-end">
           <span className="font-medium">{km} km</span>
-          <span>{formatPace(activity.averageSpeed)}</span>
+          <span className="hidden sm:inline">{formatPace(activity.averageSpeed)}</span>
           <span>{formatDuration(activity.duration)}</span>
-          <span>{Math.round(activity.averageHR)} bpm</span>
+          <span className="hidden sm:inline">{Math.round(activity.averageHR)} bpm</span>
           <span className="text-gray-300 text-xs">{expanded ? "▲" : "▼"}</span>
         </div>
       </button>
