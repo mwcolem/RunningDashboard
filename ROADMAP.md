@@ -1,4 +1,4 @@
-# Garmin Running Dashboard — Implementation Plan
+# Garmin Running Dashboard — Implementation Roadmap
 
 ## Context
 
@@ -14,43 +14,55 @@ Personal dashboard to visualize running activities, health metrics, and training
 
 ```
 RunningDashboard/
-├── .env.example          # GARMIN_EMAIL, GARMIN_PASSWORD
+├── .env.example
 ├── .env                  # not committed
 ├── .gitignore
+├── .github/
+│   └── workflows/
+│       └── ci.yml        # pytest + mypy (backend) + tsc (frontend)
 ├── Makefile              # `make dev` runs both backend + frontend
+├── goals.json            # local mileage goal config (not committed)
 ├── CLAUDE.md
 ├── ROADMAP.md
 ├── README.md
 ├── backend/
 │   ├── pyproject.toml
 │   ├── .venv/
+│   ├── tests/
+│   │   ├── conftest.py       # TestClient fixture with mocked Garmin client
+│   │   ├── test_ping.py
+│   │   └── test_stats.py
 │   └── app/
 │       ├── main.py           # FastAPI app, CORS, lifespan, exception handlers
 │       ├── config.py         # pydantic-settings reads .env
 │       ├── garmin_client.py  # Singleton Garmin client + TTL cache
 │       └── routers/
-│           ├── activities.py # /api/activities, /api/activities/{id}, /api/activities/{id}/splits
-│           ├── health.py     # /api/health/* (heart-rate, hrv, stress, spo2, sleep, summary, body-battery)
-│           └── training.py   # /api/training/* (max-metrics, readiness, status, race-predictions)
+│           ├── activities.py # /api/activities, /api/activities/{id}/splits
+│           ├── gear.py       # /api/gear/shoes
+│           ├── health.py     # /api/health/* (7 endpoints)
+│           ├── stats.py      # /api/stats/mileage, /api/stats/goals
+│           └── training.py   # /api/training/* (4 endpoints)
 ├── frontend/
 │   ├── package.json
 │   ├── tsconfig.json
 │   ├── vite.config.ts        # React plugin + Tailwind + proxy to :8001
 │   ├── index.html
 │   └── src/
-│       ├── main.tsx           # QueryClientProvider root
-│       ├── App.tsx            # BrowserRouter + 3 routes
-│       ├── index.css          # Tailwind import
+│       ├── main.tsx
+│       ├── App.tsx            # BrowserRouter + 4 routes
+│       ├── index.css
 │       ├── api/client.ts      # fetch wrapper + TanStack Query hooks
 │       ├── types/garmin.ts    # TypeScript interfaces for API responses
 │       ├── pages/
-│       │   ├── Dashboard.tsx  # Readiness, VO2 max, training status, recent runs, race predictions
+│       │   ├── Dashboard.tsx  # Readiness, VO2 max, mileage, goals, recent shoes, race predictions
 │       │   ├── Activities.tsx # Paginated activity list with expandable splits
+│       │   ├── Gear.tsx       # Shoe mileage tracker
 │       │   └── Health.tsx     # Date picker, HR chart, metric cards, sleep breakdown
 │       └── components/
 │           ├── Layout.tsx         # Desktop sidebar + mobile bottom nav + ErrorBoundary
 │           ├── ActivityCard.tsx   # Expandable card — fetches splits on click
-│           ├── SplitsTable.tsx    # Lap table (pace, HR, elevation)
+│           ├── GoalBar.tsx        # Mileage goal progress bar with remaining display
+│           ├── SplitsTable.tsx    # Lap table (pace in min/mi, distance in mi, HR, elevation)
 │           ├── MetricCard.tsx     # Reusable label/value card
 │           ├── HeartRateChart.tsx # Recharts LineChart with downsampling
 │           ├── Skeleton.tsx       # Skeleton, SkeletonCard, SkeletonRow, SkeletonChart
@@ -73,6 +85,7 @@ RunningDashboard/
 - Daily health metrics (HR, stress, sleep, SpO2): 300s
 - Training metrics (VO2max, readiness): 600s
 - Activity detail/splits: 3600s (immutable data)
+- Gear/shoes: 3600s
 
 ### API Endpoints
 
@@ -102,10 +115,23 @@ RunningDashboard/
 | `GET /api/training/status?date=` | `get_training_status(date)` |
 | `GET /api/training/race-predictions` | `get_race_predictions()` |
 
+**Stats** (`/api/stats`)
+| Endpoint | Notes |
+|---|---|
+| `GET /api/stats/mileage` | Year/month/week totals in miles from YTD activity scan |
+| `GET /api/stats/goals` | Reads `goals.json`, joins with mileage data |
+
+**Gear** (`/api/gear`)
+| Endpoint | Notes |
+|---|---|
+| `GET /api/gear/shoes` | Active shoes with stats + last_used from recent activity scan |
+
 ### Key Backend Decisions
 
 - **Sync route handlers** (`def` not `async def`) — `garminconnect` uses blocking I/O; FastAPI auto-runs sync handlers in a threadpool
 - **Global exception handler** catches `GarminConnectTooManyRequestsError` → 429, `GarminConnectAuthenticationError` → 401
+- **Goals via local config** — Garmin's `/goal-service/goal/goals` API returns empty for app-set goals; `goals.json` at project root is the source of truth
+- **Gear last-used** — `get_shoes()` calls `get_activity_gear(id)` for up to 30 recent runs to find the most recent date each shoe was worn
 
 ## Frontend Design
 
@@ -115,8 +141,9 @@ TanStack Query manages all server state. Each API call gets a typed hook in `api
 
 ### Pages
 
-- **Dashboard**: Readiness score (color-coded), VO2 max, training status, last 10 runs, race predictions. All sections load and skeleton independently.
-- **Activities**: Paginated list (20/page) of `ActivityCard` components. Click to expand → fetches and shows `SplitsTable` on demand.
+- **Dashboard**: Readiness score (color-coded), VO2 max, training status, mileage summary (week/month/year), goals with remaining mileage, last 2 shoes used (with progress bars), race predictions.
+- **Activities**: Paginated list (20/page) of `ActivityCard` components. Click to expand → fetches and shows `SplitsTable` on demand. All distances/paces in miles.
+- **Gear**: Active shoes sorted by most recently used. Each card shows name, make/model, total miles, progress bar toward retirement limit (blue → orange at 80% → red at/over limit), last run date, activity count.
 - **Health**: Date picker → HR line chart (Recharts), HRV/stress/SpO2/sleep metric cards, sleep stage breakdown. Each metric skeletons independently.
 
 ### Styling & Responsiveness
@@ -125,13 +152,16 @@ Tailwind CSS v4 via `@tailwindcss/vite` plugin. Desktop: sidebar nav. Mobile: fi
 
 ## Implementation Steps
 
-1. ✅ **Step 1 — Backend skeleton**: `pyproject.toml`, `config.py`, `main.py` with `GET /api/ping`.
-2. ✅ **Step 2 — Garmin client wrapper**: `garmin_client.py` with singleton login + TTL cache. Activities router wired up.
-3. ✅ **Step 3 — Activities router**: Done as part of Step 2.
-4. ✅ **Step 4 — Frontend skeleton**: Vite + React + Router + TanStack Query. Dashboard shows recent runs end-to-end.
-5. ✅ **Step 5 — Health router + Health page**: Health endpoints + HR chart + metric cards + sleep breakdown.
-6. ✅ **Step 6 — Training router + Dashboard enrichment**: Training endpoints, readiness/VO2/status on Dashboard, full Activities page with expandable splits.
-7. ✅ **Step 7 — Polish**: Skeleton loading states, `ErrorBoundary`, responsive layout with mobile bottom nav.
+1. ✅ **Backend skeleton** — `pyproject.toml`, `config.py`, `main.py` with `GET /api/ping`.
+2. ✅ **Garmin client wrapper** — `garmin_client.py` with singleton login + TTL cache.
+3. ✅ **Activities router** — `/api/activities` and splits endpoint.
+4. ✅ **Frontend skeleton** — Vite + React + Router + TanStack Query. Full stack validated end-to-end.
+5. ✅ **Health router + Health page** — 7 health endpoints, HR chart, metric cards, sleep breakdown.
+6. ✅ **Training router + Dashboard** — Readiness, VO2 max, training status, race predictions.
+7. ✅ **Polish** — Skeleton loading states, ErrorBoundary, responsive layout.
+8. ✅ **Mileage + Goals** — `/api/stats/mileage`, `/api/stats/goals`, GoalBar component, local `goals.json` config.
+9. ✅ **Gear / Shoe tracker** — `/api/gear/shoes`, Gear page, last-used detection via activity gear scan, Recent Shoes panel on Dashboard.
+10. ✅ **CI** — GitHub Actions: pytest + mypy (backend), tsc (frontend). Tests mock Garmin client; no credentials needed in CI.
 
 ## Dev Workflow
 
@@ -147,16 +177,3 @@ make dev
 ```
 
 Swagger docs at `http://localhost:8001/docs`.
-
-## Verification
-
-All steps complete. With both servers running and a valid `.env`:
-
-```bash
-curl http://localhost:8001/api/ping
-curl http://localhost:8001/api/activities
-curl http://localhost:8001/api/health/heart-rate
-curl http://localhost:8001/api/training/readiness
-```
-
-Open `http://localhost:5174` — all three pages functional with real Garmin data.
