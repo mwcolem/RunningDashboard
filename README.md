@@ -42,8 +42,8 @@ npm install
 ## Running
 
 ```bash
-# Backend only (http://localhost:8000)
-cd backend && uvicorn app.main:app --reload --port 8000
+# Backend only (http://localhost:8001)
+cd backend && .venv/bin/uvicorn app.main:app --reload --port 8001
 
 # Frontend only (http://localhost:5173)
 cd frontend && npm run dev
@@ -52,7 +52,7 @@ cd frontend && npm run dev
 make dev
 ```
 
-API docs available at `http://localhost:8000/docs`.
+API docs available at `http://localhost:8001/docs`.
 
 ## Development
 

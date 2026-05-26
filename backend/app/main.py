@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -12,7 +13,10 @@ from app.routers import activities
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    gc.get_client()
+    try:
+        gc.get_client()
+    except Exception as e:
+        logging.getLogger(__name__).warning("Garmin login failed at startup: %s — will retry on first request", e)
     yield
 
 
