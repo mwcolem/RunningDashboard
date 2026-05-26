@@ -68,6 +68,45 @@ def get_activity_splits(activity_id: int) -> dict[str, Any]:
     return data  # type: ignore[return-value]
 
 
+def get_max_metrics(d: str | None = None) -> dict[str, Any]:
+    d = d or _today()
+    key = f"max_metrics:{d}"
+    if (cached := _cached(key, TTL_TRAINING)) is not None:
+        return cached  # type: ignore[return-value]
+    data = get_client().get_max_metrics(d)
+    _store(key, data)
+    return data  # type: ignore[return-value]
+
+
+def get_training_readiness(d: str | None = None) -> dict[str, Any]:
+    d = d or _today()
+    key = f"training_readiness:{d}"
+    if (cached := _cached(key, TTL_TRAINING)) is not None:
+        return cached  # type: ignore[return-value]
+    data = get_client().get_training_readiness(d)
+    _store(key, data)
+    return data  # type: ignore[return-value]
+
+
+def get_training_status(d: str | None = None) -> dict[str, Any]:
+    d = d or _today()
+    key = f"training_status:{d}"
+    if (cached := _cached(key, TTL_TRAINING)) is not None:
+        return cached  # type: ignore[return-value]
+    data = get_client().get_training_status(d)
+    _store(key, data)
+    return data  # type: ignore[return-value]
+
+
+def get_race_predictions() -> dict[str, Any]:
+    key = "race_predictions"
+    if (cached := _cached(key, TTL_TRAINING)) is not None:
+        return cached  # type: ignore[return-value]
+    data = get_client().get_race_predictions()
+    _store(key, data)
+    return data  # type: ignore[return-value]
+
+
 def _today() -> str:
     return date.today().isoformat()
 

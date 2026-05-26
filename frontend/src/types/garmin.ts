@@ -70,3 +70,48 @@ export interface UserSummary {
   bodyBatteryChargedValue?: number;
   bodyBatteryDrainedValue?: number;
 }
+
+export interface TrainingReadiness {
+  score?: number;
+  scoreQualifier?: string;
+  deviceId?: number;
+}
+
+export interface MaxMetrics {
+  generic?: {
+    vo2MaxPreciseValue?: number;
+    fitnessAge?: number;
+  };
+}
+
+export interface TrainingStatus {
+  latestTrainingStatusData?: {
+    trainingStatusPhraseKey?: string;
+    latestTrainingLoadData?: {
+      trainingLoadIndex?: number;
+    };
+  };
+}
+
+export interface RacePrediction {
+  raceName?: string;
+  time?: number;
+  distance?: number;
+}
+
+export interface RacePredictions {
+  racePredictions?: RacePrediction[];
+}
+
+export interface SplitEntry {
+  distance?: number;
+  duration?: number;
+  averageSpeed?: number;
+  averageHR?: number;
+  totalElevationGain?: number;
+  splitType?: string;
+}
+
+export interface ActivitySplits {
+  lapDTOs?: SplitEntry[];
+}

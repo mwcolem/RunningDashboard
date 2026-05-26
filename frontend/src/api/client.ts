@@ -1,12 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import type {
   Activity,
+  ActivitySplits,
   HeartRateData,
   HrvData,
-  Split,
+  MaxMetrics,
+  RacePredictions,
   SleepData,
   Spo2Data,
   StressData,
+  TrainingReadiness,
+  TrainingStatus,
   UserSummary,
 } from "../types/garmin";
 
@@ -41,7 +45,7 @@ export function useActivity(id: number) {
 export function useActivitySplits(id: number, enabled = false) {
   return useQuery({
     queryKey: ["splits", id],
-    queryFn: () => fetchApi<Split>(`/api/activities/${id}/splits`),
+    queryFn: () => fetchApi<ActivitySplits>(`/api/activities/${id}/splits`),
     staleTime: 60 * 60 * 1000,
     enabled,
   });
@@ -94,5 +98,39 @@ export function useSleep(date?: string) {
     queryKey: ["health", "sleep", date],
     queryFn: () => fetchApi<SleepData>("/api/health/sleep", date ? { date } : undefined),
     staleTime: HEALTH_STALE,
+  });
+}
+
+const TRAINING_STALE = 10 * 60 * 1000;
+
+export function useTrainingReadiness(date?: string) {
+  return useQuery({
+    queryKey: ["training", "readiness", date],
+    queryFn: () => fetchApi<TrainingReadiness>("/api/training/readiness", date ? { date } : undefined),
+    staleTime: TRAINING_STALE,
+  });
+}
+
+export function useMaxMetrics(date?: string) {
+  return useQuery({
+    queryKey: ["training", "max-metrics", date],
+    queryFn: () => fetchApi<MaxMetrics>("/api/training/max-metrics", date ? { date } : undefined),
+    staleTime: TRAINING_STALE,
+  });
+}
+
+export function useTrainingStatus(date?: string) {
+  return useQuery({
+    queryKey: ["training", "status", date],
+    queryFn: () => fetchApi<TrainingStatus>("/api/training/status", date ? { date } : undefined),
+    staleTime: TRAINING_STALE,
+  });
+}
+
+export function useRacePredictions() {
+  return useQuery({
+    queryKey: ["training", "race-predictions"],
+    queryFn: () => fetchApi<RacePredictions>("/api/training/race-predictions"),
+    staleTime: TRAINING_STALE,
   });
 }
