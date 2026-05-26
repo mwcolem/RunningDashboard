@@ -73,8 +73,8 @@ export interface UserSummary {
 
 export interface TrainingReadiness {
   score?: number;
-  scoreQualifier?: string;
-  deviceId?: number;
+  level?: string;
+  feedbackShort?: string;
 }
 
 export interface MaxMetrics {
@@ -85,11 +85,13 @@ export interface MaxMetrics {
 }
 
 export interface TrainingStatus {
-  latestTrainingStatusData?: {
-    trainingStatusPhraseKey?: string;
-    latestTrainingLoadData?: {
-      trainingLoadIndex?: number;
+  mostRecentVO2Max?: {
+    generic?: {
+      vo2MaxPreciseValue?: number;
     };
+  };
+  latestTrainingStatusData?: {
+    trainingStatusFeedbackPhrase?: string;
   };
 }
 
@@ -114,4 +116,29 @@ export interface SplitEntry {
 
 export interface ActivitySplits {
   lapDTOs?: SplitEntry[];
+}
+
+export interface MileageSummary {
+  year_mi: number;
+  month_mi: number;
+  week_mi: number;
+}
+
+export interface Goal {
+  name: string;
+  period: "year" | "month" | "week";
+  target_mi: number;
+  current_mi: number;
+  pct: number;
+}
+
+export interface Shoe {
+  uuid: string;
+  name: string;
+  make_model: string;
+  total_mi: number;
+  total_activities: number;
+  max_mi: number | null;
+  date_begin: string | null;
+  last_used: string | null;
 }

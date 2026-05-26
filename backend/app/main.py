@@ -8,7 +8,7 @@ from garminconnect import GarminConnectAuthenticationError, GarminConnectTooMany
 
 import app.garmin_client as gc
 from app.config import get_settings
-from app.routers import activities, health, training
+from app.routers import activities, gear, health, stats, training
 
 
 @asynccontextmanager
@@ -32,8 +32,10 @@ app.add_middleware(
 )
 
 app.include_router(activities.router)
+app.include_router(gear.router)
 app.include_router(health.router)
 app.include_router(training.router)
+app.include_router(stats.router)
 
 
 @app.exception_handler(GarminConnectTooManyRequestsError)

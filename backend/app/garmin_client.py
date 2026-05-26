@@ -1,6 +1,6 @@
 import logging
 import time
-from datetime import date
+from datetime import date, timedelta
 from typing import Any
 
 from garminconnect import Garmin
@@ -17,6 +17,7 @@ TTL_ACTIVITIES = 600
 TTL_HEALTH = 300
 TTL_TRAINING = 600
 TTL_ACTIVITY_DETAIL = 3600
+TTL_GEAR = 3600
 
 
 def _cached(key: str, ttl: int) -> Any | None:
@@ -177,5 +178,108 @@ def get_body_battery(d: str | None = None) -> list[Any]:
     if (cached := _cached(key, TTL_HEALTH)) is not None:
         return cached  # type: ignore[return-value]
     data = get_client().get_body_battery(d)
+    _store(key, data)
+    return data  # type: ignore[return-value]
+
+
+def get_mileage_summary() -> dict[str, float]:
+    """Fetch year-to-date running activities and compute week/month/year km totals."""
+    key = "mileage_summary"
+    if (cached := _cached(key, TTL_HEALTH)) is not None:
+        return cached  # type: ignore[return-value]
+
+    today = date.today()
+    year_start = today.replace(month=1, day=1).isoformat()
+    # Monday of the current week
+    week_start = (today - timedelta(days=today.weekday())).isoformat()
+    month_start = today.replace(day=1).isoformat()
+    today_str = today.isoformat()
+
+    activities = get_client().get_activities_by_date(year_start, today_str, activitytype="running")
+
+    year_m = 0.0
+    month_m = 0.0
+    week_m = 0.0
+
+    for a in activities:
+        dist = a.get("distance") or 0.0
+        start = (a.get("startTimeLocal") or "")[:10]
+        if start >= year_start:
+            year_m += dist
+        if start >= month_start:
+            month_m += dist
+        if start >= week_start:
+            week_m += dist
+
+    result = {
+        "year_mi": round(year_m * 0.000621371, 2),
+        "month_mi": round(month_m * 0.000621371, 2),
+        "week_mi": round(week_m * 0.000621371, 2),
+    }
+    _store(key, result)
+    return result
+
+
+def get_shoes() -> list[dict[str, Any]]:
+    key = "shoes"
+    if (cached := _cached(key, TTL_GEAR)) is not None:
+        return cached  # type: ignore[return-value]
+
+    client = get_client()
+    profile = client.get_user_profile()
+    user_id = str(profile["id"])
+
+    all_gear = client.get_gear(user_id)
+    active_shoes = [
+        g for g in all_gear
+        if g.get("gearTypeName") == "Shoes" and g.get("gearStatusName") == "active"
+    ]
+
+    result = []
+    uuid_to_idx: dict[str, int] = {}
+    for shoe in active_shoes:
+        uuid = shoe["uuid"]
+        stats = client.get_gear_stats(uuid)
+        total_m = stats.get("totalDistance") or 0.0
+        total_mi = round(total_m * 0.000621371, 1)
+        max_m = shoe.get("maximumMeters")
+        max_mi = round(max_m * 0.000621371, 1) if max_m else None
+        uuid_to_idx[uuid] = len(result)
+        result.append({
+            "uuid": uuid,
+            "name": shoe.get("displayName", ""),
+            "make_model": shoe.get("customMakeModel") or shoe.get("displayName", ""),
+            "total_mi": total_mi,
+            "total_activities": stats.get("totalActivities", 0),
+            "max_mi": max_mi,
+            "date_begin": (shoe.get("dateBegin") or "")[:10] or None,
+            "last_used": None,
+        })
+
+    # Scan recent activities to find last_used date per shoe
+    recent = client.get_activities(0, 30, activitytype="running")
+    found: set[str] = set()
+    for act in recent:
+        if len(found) == len(result):
+            break
+        act_date = (act.get("startTimeLocal") or "")[:10] or None
+        act_gear = client.get_activity_gear(act["activityId"])
+        if isinstance(act_gear, list):
+            for g in act_gear:
+                uuid = g.get("uuid", "")
+                if uuid in uuid_to_idx and uuid not in found:
+                    result[uuid_to_idx[uuid]]["last_used"] = act_date
+                    found.add(uuid)
+
+    result.sort(key=lambda s: s["last_used"] or "", reverse=True)
+    _store(key, result)
+    return result  # type: ignore[return-value]
+
+
+def get_active_goals() -> list[dict[str, Any]]:
+    key = "goals_active"
+    if (cached := _cached(key, TTL_TRAINING)) is not None:
+        return cached  # type: ignore[return-value]
+    data = get_client().get_goals(status="active")
     _store(key, data)
     return data  # type: ignore[return-value]

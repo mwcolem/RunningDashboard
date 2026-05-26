@@ -4,6 +4,7 @@ import ErrorBoundary from "./ErrorBoundary";
 const navItems = [
   { to: "/dashboard", label: "Dashboard" },
   { to: "/activities", label: "Activities" },
+  { to: "/gear", label: "Gear" },
   { to: "/health", label: "Health" },
 ];
 

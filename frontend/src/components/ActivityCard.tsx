@@ -5,10 +5,10 @@ import SplitsTable from "./SplitsTable";
 
 function formatPace(speedMs: number): string {
   if (!speedMs) return "—";
-  const secsPerKm = 1000 / speedMs;
-  const mins = Math.floor(secsPerKm / 60);
-  const secs = Math.round(secsPerKm % 60).toString().padStart(2, "0");
-  return `${mins}:${secs}/km`;
+  const secsPerMi = 1609.344 / speedMs;
+  const mins = Math.floor(secsPerMi / 60);
+  const secs = Math.round(secsPerMi % 60).toString().padStart(2, "0");
+  return `${mins}:${secs}/mi`;
 }
 
 function formatDuration(seconds: number): string {
@@ -32,7 +32,7 @@ export default function ActivityCard({ activity }: Props) {
     month: "short",
     day: "numeric",
   });
-  const km = (activity.distance / 1000).toFixed(2);
+  const mi = (activity.distance / 1609.344).toFixed(2);
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -45,7 +45,7 @@ export default function ActivityCard({ activity }: Props) {
           <p className="text-xs text-gray-400 mt-0.5">{date}</p>
         </div>
         <div className="flex items-center gap-3 sm:gap-5 text-sm text-gray-600 flex-wrap justify-end">
-          <span className="font-medium">{km} km</span>
+          <span className="font-medium">{mi} mi</span>
           <span className="hidden sm:inline">{formatPace(activity.averageSpeed)}</span>
           <span>{formatDuration(activity.duration)}</span>
           <span className="hidden sm:inline">{Math.round(activity.averageHR)} bpm</span>

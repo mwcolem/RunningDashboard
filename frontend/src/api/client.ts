@@ -2,10 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import type {
   Activity,
   ActivitySplits,
+  Goal,
   HeartRateData,
   HrvData,
   MaxMetrics,
+  MileageSummary,
   RacePredictions,
+  Shoe,
   SleepData,
   Spo2Data,
   StressData,
@@ -132,5 +135,29 @@ export function useRacePredictions() {
     queryKey: ["training", "race-predictions"],
     queryFn: () => fetchApi<RacePredictions>("/api/training/race-predictions"),
     staleTime: TRAINING_STALE,
+  });
+}
+
+export function useMileageSummary() {
+  return useQuery({
+    queryKey: ["stats", "mileage"],
+    queryFn: () => fetchApi<MileageSummary>("/api/stats/mileage"),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useGoals() {
+  return useQuery({
+    queryKey: ["stats", "goals"],
+    queryFn: () => fetchApi<Goal[]>("/api/stats/goals"),
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+export function useShoes() {
+  return useQuery({
+    queryKey: ["gear", "shoes"],
+    queryFn: () => fetchApi<Shoe[]>("/api/gear/shoes"),
+    staleTime: 60 * 60 * 1000,
   });
 }
