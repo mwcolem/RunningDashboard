@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     garmin_password: str = ""
     garmin_tokenstore: str = str(Path.home() / ".garminconnect")
     cache_ttl_seconds: int = 300
-    cors_origins: list[str] = ["http://localhost:5173"]
+    cors_origins: list[str] = ["http://localhost:5174"]
 
 
 @lru_cache
