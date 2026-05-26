@@ -225,7 +225,10 @@ def get_shoes() -> list[dict[str, Any]]:
 
     client = get_client()
     profile = client.get_user_profile()
-    user_id = str(profile["id"])
+    user_id = profile.get("id")
+    if not user_id:
+        raise ValueError("Garmin user profile did not return an 'id' field")
+    user_id = str(user_id)
 
     all_gear = client.get_gear(user_id)
     active_shoes = [
@@ -255,13 +258,17 @@ def get_shoes() -> list[dict[str, Any]]:
         })
 
     # Scan recent activities to find last_used date per shoe
-    recent = client.get_activities(0, 30, activitytype="running")
+    recent = client.get_activities(0, 10, activitytype="running")
     found: set[str] = set()
     for act in recent:
         if len(found) == len(result):
             break
         act_date = (act.get("startTimeLocal") or "")[:10] or None
-        act_gear = client.get_activity_gear(act["activityId"])
+        try:
+            act_gear = client.get_activity_gear(act["activityId"])
+        except Exception:
+            logger.warning("Failed to fetch gear for activity %s — skipping", act.get("activityId"))
+            continue
         if isinstance(act_gear, list):
             for g in act_gear:
                 uuid = g.get("uuid", "")
@@ -272,12 +279,3 @@ def get_shoes() -> list[dict[str, Any]]:
     result.sort(key=lambda s: s["last_used"] or "", reverse=True)
     _store(key, result)
     return result
-
-
-def get_active_goals() -> list[dict[str, Any]]:
-    key = "goals_active"
-    if (cached := _cached(key, TTL_TRAINING)) is not None:
-        return cast(list[dict[str, Any]], cached)
-    data = get_client().get_goals(status="active")
-    _store(key, data)
-    return cast(list[dict[str, Any]], data)

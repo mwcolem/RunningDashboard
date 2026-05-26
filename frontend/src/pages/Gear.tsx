@@ -105,7 +105,7 @@ export default function Gear() {
                 <ShoeCard
                   key={shoe.uuid}
                   shoe={shoe}
-                  recentRank={shoe.last_used ? i + 1 : undefined}
+                  recentRank={i < 2 && shoe.last_used ? i + 1 : undefined}
                 />
               ))
             : !isLoading && <p className="text-sm text-gray-400">No active shoes found in Garmin Connect.</p>

@@ -1,4 +1,5 @@
 import json
+import time
 from pathlib import Path
 from typing import Any
 
@@ -9,6 +10,19 @@ import app.garmin_client as gc
 router = APIRouter(prefix="/api/stats")
 
 GOALS_FILE = Path(__file__).resolve().parents[3] / "goals.json"
+_GOALS_TTL = 60.0
+_goals_cache: tuple[float, list[dict[str, Any]]] | None = None
+
+
+def _read_goals_file() -> list[dict[str, Any]]:
+    global _goals_cache
+    if _goals_cache is not None and time.time() - _goals_cache[0] < _GOALS_TTL:
+        return _goals_cache[1]
+    if not GOALS_FILE.exists():
+        return []
+    data: list[dict[str, Any]] = json.loads(GOALS_FILE.read_text())
+    _goals_cache = (time.time(), data)
+    return data
 
 
 @router.get("/mileage")
@@ -18,12 +32,11 @@ def get_mileage() -> Any:
 
 @router.get("/goals")
 def get_goals() -> Any:
-    if not GOALS_FILE.exists():
+    goals = _read_goals_file()
+    if not goals:
         return []
 
-    goals = json.loads(GOALS_FILE.read_text())
     mileage = gc.get_mileage_summary()
-
     period_map = {
         "year": mileage["year_mi"],
         "month": mileage["month_mi"],
