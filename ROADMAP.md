@@ -31,7 +31,7 @@ RunningDashboard/
 │       └── routers/
 │           ├── activities.py # /api/activities, /api/activities/{id}, /api/activities/{id}/splits
 │           ├── health.py     # /api/health/* (heart-rate, hrv, stress, spo2, sleep, summary, body-battery)
-│           └── training.py   # /api/training/* — Step 6
+│           └── training.py   # /api/training/* (max-metrics, readiness, status, race-predictions)
 ├── frontend/
 │   ├── package.json
 │   ├── tsconfig.json
@@ -44,13 +44,17 @@ RunningDashboard/
 │       ├── api/client.ts      # fetch wrapper + TanStack Query hooks
 │       ├── types/garmin.ts    # TypeScript interfaces for API responses
 │       ├── pages/
-│       │   ├── Dashboard.tsx  # Last 10 runs (distance, pace, duration, HR)
-│       │   ├── Activities.tsx # Stub — Step 6
+│       │   ├── Dashboard.tsx  # Readiness, VO2 max, training status, recent runs, race predictions
+│       │   ├── Activities.tsx # Paginated activity list with expandable splits
 │       │   └── Health.tsx     # Date picker, HR chart, metric cards, sleep breakdown
 │       └── components/
-│           ├── Layout.tsx         # Sidebar nav + Outlet
+│           ├── Layout.tsx         # Desktop sidebar + mobile bottom nav + ErrorBoundary
+│           ├── ActivityCard.tsx   # Expandable card — fetches splits on click
+│           ├── SplitsTable.tsx    # Lap table (pace, HR, elevation)
 │           ├── MetricCard.tsx     # Reusable label/value card
-│           └── HeartRateChart.tsx # Recharts LineChart with downsampling
+│           ├── HeartRateChart.tsx # Recharts LineChart with downsampling
+│           ├── Skeleton.tsx       # Skeleton, SkeletonCard, SkeletonRow, SkeletonChart
+│           └── ErrorBoundary.tsx  # React error boundary wrapping page Outlet
 ```
 
 ## Backend Design
@@ -90,12 +94,13 @@ RunningDashboard/
 | `GET /api/health/sleep?date=` | `get_sleep_data(date)` |
 | `GET /api/health/body-battery?date=` | `get_body_battery(date)` |
 
-**Training** (`/api/training`) — Step 6
+**Training** (`/api/training`)
 | Endpoint | Garmin Method |
 |---|---|
 | `GET /api/training/max-metrics?date=` | `get_max_metrics(date)` |
 | `GET /api/training/readiness?date=` | `get_training_readiness(date)` |
 | `GET /api/training/status?date=` | `get_training_status(date)` |
+| `GET /api/training/race-predictions` | `get_race_predictions()` |
 
 ### Key Backend Decisions
 
@@ -110,23 +115,23 @@ TanStack Query manages all server state. Each API call gets a typed hook in `api
 
 ### Pages
 
-- **Dashboard**: Last 10 runs with distance, pace, duration, HR. Will gain training readiness and race predictions in Step 6.
-- **Activities**: Stub — paginated activity list with expandable splits coming in Step 6.
-- **Health**: Date picker → HR line chart (Recharts), HRV/stress/SpO2/sleep metric cards, sleep stage breakdown.
+- **Dashboard**: Readiness score (color-coded), VO2 max, training status, last 10 runs, race predictions. All sections load and skeleton independently.
+- **Activities**: Paginated list (20/page) of `ActivityCard` components. Click to expand → fetches and shows `SplitsTable` on demand.
+- **Health**: Date picker → HR line chart (Recharts), HRV/stress/SpO2/sleep metric cards, sleep stage breakdown. Each metric skeletons independently.
 
-### Styling
+### Styling & Responsiveness
 
-Tailwind CSS v4 via `@tailwindcss/vite` plugin. No PostCSS config needed.
+Tailwind CSS v4 via `@tailwindcss/vite` plugin. Desktop: sidebar nav. Mobile: fixed bottom nav, pace/HR stats hidden on small screens to prevent overflow.
 
 ## Implementation Steps
 
 1. ✅ **Step 1 — Backend skeleton**: `pyproject.toml`, `config.py`, `main.py` with `GET /api/ping`.
-2. ✅ **Step 2 — Garmin client wrapper**: `garmin_client.py` with singleton login + TTL cache + activities functions. Activities router wired up.
+2. ✅ **Step 2 — Garmin client wrapper**: `garmin_client.py` with singleton login + TTL cache. Activities router wired up.
 3. ✅ **Step 3 — Activities router**: Done as part of Step 2.
 4. ✅ **Step 4 — Frontend skeleton**: Vite + React + Router + TanStack Query. Dashboard shows recent runs end-to-end.
 5. ✅ **Step 5 — Health router + Health page**: Health endpoints + HR chart + metric cards + sleep breakdown.
-6. **Step 6 — Training router + Dashboard enrichment**: Training endpoints, training readiness/VO2 max on Dashboard, full Activities page with expandable splits.
-7. **Step 7 — Polish**: Loading skeletons, error boundaries, responsive layout.
+6. ✅ **Step 6 — Training router + Dashboard enrichment**: Training endpoints, readiness/VO2/status on Dashboard, full Activities page with expandable splits.
+7. ✅ **Step 7 — Polish**: Skeleton loading states, `ErrorBoundary`, responsive layout with mobile bottom nav.
 
 ## Dev Workflow
 
@@ -145,6 +150,13 @@ Swagger docs at `http://localhost:8001/docs`.
 
 ## Verification
 
-- Steps 1–5 complete: `curl http://localhost:8001/api/ping`, `/api/activities`, `/api/health/heart-rate` all return data
-- Open `http://localhost:5174` — Dashboard shows recent runs, Health page shows HR chart and metric cards
-- After Step 6: All three pages fully functional with real Garmin data
+All steps complete. With both servers running and a valid `.env`:
+
+```bash
+curl http://localhost:8001/api/ping
+curl http://localhost:8001/api/activities
+curl http://localhost:8001/api/health/heart-rate
+curl http://localhost:8001/api/training/readiness
+```
+
+Open `http://localhost:5174` — all three pages functional with real Garmin data.
