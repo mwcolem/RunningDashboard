@@ -15,9 +15,6 @@ build/
 htmlcov/
 .coverage
 
-# Garmin tokens
-~/.garminconnect/
-
 # Node
 node_modules/
 frontend/dist/

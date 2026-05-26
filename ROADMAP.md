@@ -2,7 +2,7 @@
 
 ## Context
 
-New personal dashboard to visualize running activities, health metrics, and training load from Garmin Connect. The repo is currently empty. The `python-garminconnect` library handles Garmin API communication and OAuth token management. Data is fetched on-demand (no local database) with in-memory caching to avoid Garmin's aggressive rate limits.
+Personal dashboard to visualize running activities, health metrics, and training load from Garmin Connect. The `python-garminconnect` library handles Garmin API communication and OAuth token management. Data is fetched on-demand (no local database) with in-memory caching to avoid Garmin's aggressive rate limits.
 
 ## Stack
 
@@ -15,41 +15,42 @@ New personal dashboard to visualize running activities, health metrics, and trai
 ```
 RunningDashboard/
 ├── .env.example          # GARMIN_EMAIL, GARMIN_PASSWORD
+├── .env                  # not committed
 ├── .gitignore
 ├── Makefile              # `make dev` runs both backend + frontend
 ├── CLAUDE.md
+├── ROADMAP.md
+├── README.md
 ├── backend/
 │   ├── pyproject.toml
+│   ├── .venv/
 │   └── app/
 │       ├── main.py           # FastAPI app, CORS, lifespan, exception handlers
 │       ├── config.py         # pydantic-settings reads .env
 │       ├── garmin_client.py  # Singleton Garmin client + TTL cache
-│       ├── models.py         # Pydantic response models (optional v1)
 │       └── routers/
-│           ├── activities.py # /api/activities, /api/activities/{id}/splits
-│           ├── health.py     # /api/health/heart-rate, hrv, stress, spo2, sleep
-│           └── training.py   # /api/training/readiness, status, max-metrics
+│           ├── activities.py # /api/activities, /api/activities/{id}, /api/activities/{id}/splits
+│           ├── health.py     # /api/health/* (heart-rate, hrv, stress, spo2, sleep, summary, body-battery)
+│           └── training.py   # /api/training/* — Step 6
 ├── frontend/
 │   ├── package.json
 │   ├── tsconfig.json
-│   ├── vite.config.ts        # React plugin + Tailwind + proxy to :8000
+│   ├── vite.config.ts        # React plugin + Tailwind + proxy to :8001
 │   ├── index.html
 │   └── src/
-│       ├── main.tsx
-│       ├── App.tsx            # Router setup (3 routes)
+│       ├── main.tsx           # QueryClientProvider root
+│       ├── App.tsx            # BrowserRouter + 3 routes
+│       ├── index.css          # Tailwind import
 │       ├── api/client.ts      # fetch wrapper + TanStack Query hooks
 │       ├── types/garmin.ts    # TypeScript interfaces for API responses
 │       ├── pages/
-│       │   ├── Dashboard.tsx  # Overview: readiness, recent runs, HR, race preds
-│       │   ├── Activities.tsx # Activity list + expandable splits
-│       │   └── Health.tsx     # Date-selectable HR chart, HRV, stress, sleep
+│       │   ├── Dashboard.tsx  # Last 10 runs (distance, pace, duration, HR)
+│       │   ├── Activities.tsx # Stub — Step 6
+│       │   └── Health.tsx     # Date picker, HR chart, metric cards, sleep breakdown
 │       └── components/
 │           ├── Layout.tsx         # Sidebar nav + Outlet
-│           ├── ActivityCard.tsx
-│           ├── SplitsTable.tsx
 │           ├── MetricCard.tsx     # Reusable label/value card
-│           ├── HeartRateChart.tsx  # Recharts LineChart
-│           └── TrainingReadiness.tsx
+│           └── HeartRateChart.tsx # Recharts LineChart with downsampling
 ```
 
 ## Backend Design
@@ -59,7 +60,7 @@ RunningDashboard/
 - Garmin credentials via `.env` file (`GARMIN_EMAIL`, `GARMIN_PASSWORD`), read by `pydantic-settings`
 - `garmin_client.py` creates a singleton `Garmin` instance, tries token-based login first (from `~/.garminconnect/`), falls back to email/password
 - Tokens auto-persist to disk; full re-login only if refresh token expires
-- Garmin client initializes eagerly in FastAPI `lifespan` so first request isn't slow
+- Garmin client initializes in FastAPI `lifespan` — failure is non-fatal (logs warning, retries on first request)
 
 ### In-Memory TTL Cache
 
@@ -87,8 +88,9 @@ RunningDashboard/
 | `GET /api/health/stress?date=` | `get_stress_data(date)` |
 | `GET /api/health/spo2?date=` | `get_spo2_data(date)` |
 | `GET /api/health/sleep?date=` | `get_sleep_data(date)` |
+| `GET /api/health/body-battery?date=` | `get_body_battery(date)` |
 
-**Training** (`/api/training`)
+**Training** (`/api/training`) — Step 6
 | Endpoint | Garmin Method |
 |---|---|
 | `GET /api/training/max-metrics?date=` | `get_max_metrics(date)` |
@@ -108,9 +110,9 @@ TanStack Query manages all server state. Each API call gets a typed hook in `api
 
 ### Pages
 
-- **Dashboard**: Training readiness (gauge), VO2 max + training status, last 5 runs, resting HR, race predictions. ~5 parallel queries on mount.
-- **Activities**: Paginated list of `ActivityCard` components. Click to expand → fetches splits on demand.
-- **Health**: Date picker → HR line chart (Recharts), HRV/stress/SpO2/sleep as `MetricCard` grid.
+- **Dashboard**: Last 10 runs with distance, pace, duration, HR. Will gain training readiness and race predictions in Step 6.
+- **Activities**: Stub — paginated activity list with expandable splits coming in Step 6.
+- **Health**: Date picker → HR line chart (Recharts), HRV/stress/SpO2/sleep metric cards, sleep stage breakdown.
 
 ### Styling
 
@@ -118,32 +120,31 @@ Tailwind CSS v4 via `@tailwindcss/vite` plugin. No PostCSS config needed.
 
 ## Implementation Steps
 
-1. **Step 1 — Backend skeleton**: `pyproject.toml`, `config.py`, `main.py` with `GET /api/ping`. Verify uvicorn starts.
-2. **Step 2 — Garmin client wrapper**: `garmin_client.py` with login + `get_activities`. Test with curl/Swagger UI.
-3. **Step 3 — Activities router**: `/api/activities` and `/api/activities/{id}/splits`.
-4. **Step 4 — Frontend skeleton**: Vite + React + Router + TanStack Query. `Dashboard.tsx` fetches and displays activity list. **This validates the full stack end-to-end.**
-5. **Step 5 — Health router + Health page**: Health endpoints + HR chart + metric cards.
-6. **Step 6 — Training router + Dashboard enrichment**: Training endpoints + full Dashboard overview.
-7. **Step 7 — Polish**: Loading states, error boundaries, responsive layout.
+1. ✅ **Step 1 — Backend skeleton**: `pyproject.toml`, `config.py`, `main.py` with `GET /api/ping`.
+2. ✅ **Step 2 — Garmin client wrapper**: `garmin_client.py` with singleton login + TTL cache + activities functions. Activities router wired up.
+3. ✅ **Step 3 — Activities router**: Done as part of Step 2.
+4. ✅ **Step 4 — Frontend skeleton**: Vite + React + Router + TanStack Query. Dashboard shows recent runs end-to-end.
+5. ✅ **Step 5 — Health router + Health page**: Health endpoints + HR chart + metric cards + sleep breakdown.
+6. **Step 6 — Training router + Dashboard enrichment**: Training endpoints, training readiness/VO2 max on Dashboard, full Activities page with expandable splits.
+7. **Step 7 — Polish**: Loading skeletons, error boundaries, responsive layout.
 
 ## Dev Workflow
 
 ```bash
 # Backend
-cd backend && pip install -e ".[dev]" && uvicorn app.main:app --reload --port 8000
+cd backend && .venv/bin/uvicorn app.main:app --reload --port 8001
 
 # Frontend
-cd frontend && npm install && npm run dev   # serves at :5173, proxies /api to :8000
+cd frontend && npm run dev   # serves at :5174, proxies /api to :8001
 
 # Both at once
 make dev
 ```
 
-Swagger docs at `http://localhost:8000/docs`.
+Swagger docs at `http://localhost:8001/docs`.
 
 ## Verification
 
-- After step 1: `curl http://localhost:8000/api/ping` returns 200
-- After step 3: `curl http://localhost:8000/api/activities` returns Garmin running data
-- After step 4: Open `http://localhost:5173`, verify activities render in the browser
-- After step 6: All three pages functional with real Garmin data
+- Steps 1–5 complete: `curl http://localhost:8001/api/ping`, `/api/activities`, `/api/health/heart-rate` all return data
+- Open `http://localhost:5174` — Dashboard shows recent runs, Health page shows HR chart and metric cards
+- After Step 6: All three pages fully functional with real Garmin data

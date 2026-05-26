@@ -1,0 +1,98 @@
+import { useQuery } from "@tanstack/react-query";
+import type {
+  Activity,
+  HeartRateData,
+  HrvData,
+  Split,
+  SleepData,
+  Spo2Data,
+  StressData,
+  UserSummary,
+} from "../types/garmin";
+
+async function fetchApi<T>(path: string, params?: Record<string, string>): Promise<T> {
+  const url = new URL(path, window.location.origin);
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  }
+  const res = await fetch(url.toString());
+  if (!res.ok) {
+    throw new Error(`API error: ${res.status} ${res.statusText}`);
+  }
+  return res.json();
+}
+
+export function useActivities(start = 0, limit = 20) {
+  return useQuery({
+    queryKey: ["activities", start, limit],
+    queryFn: () => fetchApi<Activity[]>("/api/activities", { start: String(start), limit: String(limit) }),
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+export function useActivity(id: number) {
+  return useQuery({
+    queryKey: ["activity", id],
+    queryFn: () => fetchApi<Activity>(`/api/activities/${id}`),
+    staleTime: 60 * 60 * 1000,
+  });
+}
+
+export function useActivitySplits(id: number, enabled = false) {
+  return useQuery({
+    queryKey: ["splits", id],
+    queryFn: () => fetchApi<Split>(`/api/activities/${id}/splits`),
+    staleTime: 60 * 60 * 1000,
+    enabled,
+  });
+}
+
+const HEALTH_STALE = 5 * 60 * 1000;
+
+export function useUserSummary(date?: string) {
+  return useQuery({
+    queryKey: ["health", "summary", date],
+    queryFn: () => fetchApi<UserSummary>("/api/health/summary", date ? { date } : undefined),
+    staleTime: HEALTH_STALE,
+  });
+}
+
+export function useHeartRate(date?: string) {
+  return useQuery({
+    queryKey: ["health", "heart-rate", date],
+    queryFn: () => fetchApi<HeartRateData>("/api/health/heart-rate", date ? { date } : undefined),
+    staleTime: HEALTH_STALE,
+  });
+}
+
+export function useHrv(date?: string) {
+  return useQuery({
+    queryKey: ["health", "hrv", date],
+    queryFn: () => fetchApi<HrvData>("/api/health/hrv", date ? { date } : undefined),
+    staleTime: HEALTH_STALE,
+  });
+}
+
+export function useStress(date?: string) {
+  return useQuery({
+    queryKey: ["health", "stress", date],
+    queryFn: () => fetchApi<StressData>("/api/health/stress", date ? { date } : undefined),
+    staleTime: HEALTH_STALE,
+  });
+}
+
+export function useSpo2(date?: string) {
+  return useQuery({
+    queryKey: ["health", "spo2", date],
+    queryFn: () => fetchApi<Spo2Data>("/api/health/spo2", date ? { date } : undefined),
+    staleTime: HEALTH_STALE,
+  });
+}
+
+export function useSleep(date?: string) {
+  return useQuery({
+    queryKey: ["health", "sleep", date],
+    queryFn: () => fetchApi<SleepData>("/api/health/sleep", date ? { date } : undefined),
+    staleTime: HEALTH_STALE,
+  });
+}

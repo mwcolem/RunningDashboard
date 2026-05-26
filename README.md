@@ -45,7 +45,7 @@ npm install
 # Backend only (http://localhost:8001)
 cd backend && .venv/bin/uvicorn app.main:app --reload --port 8001
 
-# Frontend only (http://localhost:5173)
+# Frontend only (http://localhost:5174)
 cd frontend && npm run dev
 
 # Both at once
@@ -58,13 +58,13 @@ API docs available at `http://localhost:8001/docs`.
 
 ```bash
 # Tests with coverage
-cd backend && pytest tests/
+cd backend && .venv/bin/pytest tests/
 
 # Type checking
-cd backend && mypy app/
+cd backend && .venv/bin/mypy app/
 
 # Lint
-cd backend && ruff check app/
+cd backend && .venv/bin/ruff check app/
 ```
 
 ## Architecture
