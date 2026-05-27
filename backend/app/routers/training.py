@@ -27,7 +27,7 @@ def get_training_status(date: str | None = None) -> Any:
     # Normalize: extract the first device's entry from the device-keyed dict
     # and surface it as a flat latestTrainingStatusData for the frontend.
     device_map = data.get("mostRecentTrainingStatus", {}).get("latestTrainingStatusData", {})
-    first_device = next(iter(device_map.values()), {}) if isinstance(device_map, dict) else {}
+    first_device: dict[str, Any] = next(iter(device_map.values()), {}) if isinstance(device_map, dict) else {}
     return {
         "mostRecentVO2Max": data.get("mostRecentVO2Max"),
         "latestTrainingStatusData": first_device,

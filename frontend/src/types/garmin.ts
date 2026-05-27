@@ -88,6 +88,7 @@ export interface TrainingStatus {
   mostRecentVO2Max?: {
     generic?: {
       vo2MaxPreciseValue?: number;
+      fitnessAge?: number | null;
     };
   };
   latestTrainingStatusData?: {
@@ -95,14 +96,11 @@ export interface TrainingStatus {
   };
 }
 
-export interface RacePrediction {
-  raceName?: string;
-  time?: number;
-  distance?: number;
-}
-
 export interface RacePredictions {
-  racePredictions?: RacePrediction[];
+  time5K?: number;
+  time10K?: number;
+  timeHalfMarathon?: number;
+  timeMarathon?: number;
 }
 
 export interface SplitEntry {
