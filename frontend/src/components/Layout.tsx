@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { NavLink, Outlet } from "react-router";
 import ErrorBoundary from "./ErrorBoundary";
 
@@ -9,51 +10,52 @@ const navItems = [
 ];
 
 export default function Layout() {
-  return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar — desktop only */}
-      <nav className="hidden md:flex w-48 bg-white border-r border-gray-200 flex-col p-4 gap-1 shrink-0">
-        <span className="text-lg font-semibold text-gray-800 mb-4">Running</span>
-        {navItems.map(({ to, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-blue-50 text-blue-700"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`
-            }
-          >
-            {label}
-          </NavLink>
-        ))}
-      </nav>
+  const [dark, setDark] = useState(() => localStorage.getItem("theme") === "dark");
 
-      {/* Main content */}
-      <main className="flex-1 overflow-auto p-4 md:p-6 pb-20 md:pb-6">
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    localStorage.setItem("theme", dark ? "dark" : "light");
+  }, [dark]);
+
+  return (
+    <div className="shell">
+      <aside className="sidebar">
+        <div className="brand">
+          <div className="brand-mark">R</div>
+          <div>
+            <div className="brand-name">Run</div>
+            <div className="brand-sub">Dashboard</div>
+          </div>
+        </div>
+
+        <nav className="nav">
+          {navItems.map(({ to, label }) => (
+            <NavLink key={to} to={to} className="nav-item">
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="sidebar-foot">
+          <div>
+            <span className="live-dot" />
+            Live data
+          </div>
+          <button
+            onClick={() => setDark((d) => !d)}
+            style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--fg-muted)", fontSize: 11, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+            aria-label="Toggle dark mode"
+          >
+            {dark ? "☀ Light" : "☾ Dark"}
+          </button>
+        </div>
+      </aside>
+
+      <main className="main">
         <ErrorBoundary>
           <Outlet />
         </ErrorBoundary>
       </main>
-
-      {/* Bottom nav — mobile only */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex">
-        {navItems.map(({ to, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              `flex-1 py-3 text-xs font-medium text-center transition-colors ${
-                isActive ? "text-blue-600" : "text-gray-400"
-              }`
-            }
-          >
-            {label}
-          </NavLink>
-        ))}
-      </nav>
     </div>
   );
 }
