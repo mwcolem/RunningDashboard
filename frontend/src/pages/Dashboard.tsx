@@ -172,7 +172,7 @@ export default function Dashboard() {
     : [];
   const weekMi = mileage.data?.week_mi ?? 0;
   const weekGoal = goals.data?.find((g) => g.period === "week");
-  const weekTarget = weekGoal?.target_mi ?? Math.max(Math.ceil(weekMi * 1.2), 30);
+  const weekTarget = weekGoal?.target_mi ?? 30;
   const weekPct = Math.min(100, weekMi > 0 ? (weekMi / weekTarget) * 100 : 0);
 
   const weekBars = useMemo<BarData[]>(() => {
