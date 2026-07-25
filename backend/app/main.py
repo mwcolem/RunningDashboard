@@ -29,7 +29,7 @@ app = FastAPI(title="Garmin Running Dashboard", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -53,3 +53,9 @@ async def auth_error_handler(request: Request, exc: GarminConnectAuthenticationE
 @app.get("/api/ping")
 def ping() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.post("/api/refresh")
+def refresh() -> dict[str, int]:
+    """Evict the in-memory TTL cache so the next requests hit Garmin live."""
+    return {"cleared": gc.clear_cache()}
