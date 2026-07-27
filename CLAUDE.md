@@ -2,6 +2,22 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Git workflow
+
+**Never commit or push directly to `master`.** Always work on a feature branch. Before staging any changes, verify the current branch with `git branch` and switch to (or create) a feature branch if on `master`.
+
+**Never merge pull requests.** Open PRs for review, but never call `gh pr merge` or any equivalent. The user always reviews and merges manually.
+
+## PR conventions
+
+- One change = one branch = one PR. Branch off fresh `origin/master`. Ship the minimum diff that completes the task.
+- Adjacent problems you notice get one sentence in the PR body — never a fix folded into the same branch.
+- If the task embeds an owner decision (a threshold, a scope call, a product behavior), ask before implementing; don't pick a side silently.
+- Stage files by name only — never `git add -A`. Never stage untracked files you didn't create.
+- Commit message: imperative one-line summary, then a short body with the what and the why.
+- PR body: `## Summary` bullets of behavior changes, a scope line (files touched, +/−), test evidence, and anything explicitly out of scope.
+- After opening, poll CI and report the result honestly, failures included.
+
 ## Overview
 
 RunningDashboard is a personal Garmin Connect dashboard with a Python/FastAPI backend and TypeScript/React frontend. It uses the [garminconnect](https://pypi.org/project/garminconnect/) library to pull running activities, health metrics, training load, and gear data on-demand. See `ROADMAP.md` for full implementation history.
@@ -50,7 +66,30 @@ cd backend && .venv/bin/mypy app/
 cd backend && .venv/bin/ruff check app/
 ```
 
-CI runs pytest + mypy on every push/PR via `.github/workflows/ci.yml`. Frontend type-check (`tsc --noEmit`) runs in a parallel job.
+CI runs pytest + mypy on every push/PR via `.github/workflows/ci.yml`. A parallel job runs `npx tsc --noEmit` in `frontend/`.
+
+## Pre-PR checklist
+
+Before marking any effort complete and opening a PR, run all of the following:
+
+```bash
+# Backend — from backend/
+cd backend
+.venv/bin/ruff check app/
+.venv/bin/mypy app/
+.venv/bin/pytest tests/
+
+# Frontend — from frontend/
+cd ../frontend
+npm run lint
+npm run build
+```
+
+`npm run build` (`tsc -b && vite build`) is the **only** real frontend type gate. `tsconfig.json` is a solution file (`files: []` + project references), so the CI job's `npx tsc --noEmit` type-checks zero files and passes vacuously — `tsc -b` is what actually compiles `tsconfig.app.json` and the 22 files under `src/`. A frontend type error will reach `master` unless you run the build locally.
+
+Also review `ROADMAP.md`, `README.md`, and `CLAUDE.md` and update them to reflect any new behaviour, changed constants, new endpoints, new modules, or completed work introduced by the branch.
+
+Fix all errors before committing. Do not open a PR with outstanding lint, type, or build errors.
 
 ## Architecture
 
@@ -76,7 +115,8 @@ CI runs pytest + mypy on every push/PR via `.github/workflows/ci.yml`. Frontend 
 
 - **`frontend/src/api/client.ts`** — Fetch wrapper and all TanStack Query hooks with typed responses. All server state flows through here.
 - **`frontend/src/types/garmin.ts`** — TypeScript interfaces for all API response shapes.
-- **`frontend/src/components/Layout.tsx`** — Desktop sidebar nav (4 items: Dashboard, Activities, Gear, Health) + mobile fixed bottom nav + `ErrorBoundary` wrapping `<Outlet />`.
+- **`frontend/src/components/Layout.tsx`** — Desktop sidebar nav (5 items: Dashboard, Activities, Training, Gear, Health) + mobile fixed bottom nav + `ErrorBoundary` wrapping `<Outlet />`.
+- **`frontend/src/data/trainingPlan.ts`** — Static 24-week 50-mile ultramarathon plan (Relentless Forward Commotion / Hart Strength & Endurance Coaching), transcribed from the source sheet. Exports `PLAN` (weeks with dated days), `RACE_DATE`, `CELEBRATION`, `PEAK_MI`, and `weekFor(date)`. No backend or Garmin data involved.
 - **`frontend/src/components/ActivityCard.tsx`** — Expandable row; fetches splits on click via `useActivitySplits(id, enabled)`. Distances and pace displayed in miles/min-per-mile.
 - **`frontend/src/components/SplitsTable.tsx`** — Lap table rendering `lapDTOs` (pace in min/mi, distance in mi, HR, elevation per lap).
 - **`frontend/src/components/GoalBar.tsx`** — Progress bar for a mileage goal; shows `current / target mi — X remaining`.
@@ -86,6 +126,7 @@ CI runs pytest + mypy on every push/PR via `.github/workflows/ci.yml`. Frontend 
 - **`frontend/src/components/ErrorBoundary.tsx`** — React class component; catches render errors and shows a styled fallback.
 - **`frontend/src/pages/Dashboard.tsx`** — Readiness score (color-coded 0–100), VO2 max, training status, mileage summary (week/month/year), goals, recent shoes (last 2 used with progress bars), race predictions. Each section skeletons independently.
 - **`frontend/src/pages/Activities.tsx`** — Paginated list (20/page) of `ActivityCard` components with previous/next pagination.
+- **`frontend/src/pages/Training.tsx`** — 24-week plan calendar. Summary strip (current week, phase, weekly total, days to race), a hero card for the current week, and the full 24-week grid with per-week totals and cycle labels. Purely local data — no queries.
 - **`frontend/src/pages/Gear.tsx`** — Active shoes sorted by most recently used; each card shows name, make/model, total miles, progress bar toward retirement limit (color-coded blue → orange at 80% → red at limit), last run date, and run count.
 - **`frontend/src/pages/Health.tsx`** — Date picker, HR line chart, HRV/stress/SpO2/sleep metric cards, sleep stage breakdown. Each metric skeletons independently.
 
@@ -98,4 +139,5 @@ CI runs pytest + mypy on every push/PR via `.github/workflows/ci.yml`. Frontend 
 - **Vite proxy**: `vite.config.ts` proxies `/api` requests to `http://localhost:8001`. CORS middleware on the backend is also configured as a fallback.
 - **Responsive layout**: Desktop uses a `w-48` sidebar (`hidden md:flex`). Mobile uses a fixed bottom nav (`md:hidden`). Some activity stats are `hidden sm:inline` to prevent overflow on small screens.
 - **No user-facing auth**: Personal localhost dashboard. No auth between frontend and backend.
+- **Training plan day shift**: the source sheet rests on Monday and Friday. Every workout is shifted one day earlier so rest falls on Thursday and Sunday, which makes a plan week run Sunday → Saturday and puts the long run on Friday. Anchored by `ANCHOR_WEEK`/`ANCHOR_START` in `trainingPlan.ts` (week 8 starts Sun Jul 26, 2026). Race week is the one exception: the 50-miler is pinned to Saturday, so its Friday is an extra rest day and `CELEBRATE!` spills to the Sunday after the grid.
 - **All distances in miles**: Activity distances, pace (min/mi), splits, mileage summaries, and shoe mileage all use US customary units throughout.

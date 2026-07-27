@@ -4,6 +4,7 @@ import Dashboard from "./pages/Dashboard";
 import Activities from "./pages/Activities";
 import Gear from "./pages/Gear";
 import Health from "./pages/Health";
+import Training from "./pages/Training";
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="activities" element={<Activities />} />
+          <Route path="training" element={<Training />} />
           <Route path="gear" element={<Gear />} />
           <Route path="health" element={<Health />} />
         </Route>

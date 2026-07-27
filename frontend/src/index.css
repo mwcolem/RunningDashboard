@@ -33,6 +33,8 @@
   --t-intervals: oklch(0.78 0.18 25);
   --t-long:      oklch(0.78 0.16 125);
   --t-rest:      oklch(0.85 0.005 90);
+  --t-recovery:  oklch(0.80 0.09 200);
+  --t-race:      oklch(0.68 0.20 320);
 
   --radius:   14px;
   --radius-s: 8px;
@@ -312,6 +314,97 @@ button { font: inherit; color: inherit; background: none; border: none; padding:
 ::-webkit-scrollbar-thumb:hover { background: var(--fg-faint); }
 ::-webkit-scrollbar-track { background: transparent; }
 
+/* ─── Training calendar ──────────────────────────────────────────────────── */
+
+/* --eff tints the calendar cells; --chip drives the .type-chip legend dots. */
+.eff-rest      { --eff: var(--t-rest);      --chip: var(--t-rest); }
+.eff-easy      { --eff: var(--t-easy);      --chip: var(--t-easy); }
+.eff-speed     { --eff: var(--t-intervals); --chip: var(--t-intervals); }
+.eff-hills     { --eff: var(--t-tempo);     --chip: var(--t-tempo); }
+.eff-long      { --eff: var(--t-long);      --chip: var(--t-long); }
+.eff-recovery  { --eff: var(--t-recovery);  --chip: var(--t-recovery); }
+.eff-race      { --eff: var(--t-race);      --chip: var(--t-race); }
+.eff-celebrate { --eff: var(--t-race);      --chip: var(--t-race); }
+
+.cal-scroll { overflow-x: auto; padding-bottom: 4px; }
+.cal { min-width: 880px; display: grid; gap: 3px; }
+.cal-row {
+  display: grid;
+  grid-template-columns: 54px repeat(7, minmax(0, 1fr)) 78px 92px;
+  gap: 3px;
+}
+.cal-head {
+  align-items: end;
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.cal-wk { display: flex; flex-direction: column; justify-content: center; padding: 6px 8px 6px 0; }
+.cal-wk-n { font: 600 15px/1 var(--font-display); }
+.cal-wk-d { font: 500 9px/1 var(--font-mono); color: var(--fg-faint); margin-top: 4px; }
+
+.cal-cell {
+  background: var(--card);
+  border: 1px solid var(--line-soft);
+  border-left: 3px solid var(--eff, var(--line-soft));
+  border-radius: var(--radius-s);
+  padding: 6px 8px 8px;
+  min-height: 54px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cal-date { font: 500 9px/1 var(--font-mono); color: var(--fg-faint); }
+.cal-work { font: 500 12px/1.25 var(--font-ui); }
+.cal-work.is-rest {
+  font: 400 9px/1 var(--font-ui);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+.cal-cell.is-past  { opacity: 0.42; }
+.cal-cell.is-today { border-color: var(--accent-deep); box-shadow: 0 0 0 1.5px var(--accent-deep); }
+.cal-row.is-current .cal-cell { background: var(--bg-deep); }
+
+.cal-total {
+  display: flex; flex-direction: column; justify-content: center; align-items: flex-end;
+  padding: 6px 10px;
+}
+.cal-total-n { font: 600 13px/1 var(--font-mono); }
+.cal-cycle { display: flex; align-items: center; justify-content: flex-end; }
+.cal-cycle .pill { font-size: 9px; padding: 3px 8px; letter-spacing: 0.1em; white-space: nowrap; }
+
+.cal-celebrate {
+  margin-top: 10px;
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-s);
+}
+
+.cal-week-hero { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.hero-day {
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--eff, var(--line));
+  border-radius: var(--radius-s);
+  padding: 12px 10px 14px;
+  min-height: 104px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.hero-date { font: 500 10px/1 var(--font-mono); color: var(--fg-faint); }
+.hero-work { font: 600 15px/1.2 var(--font-display); letter-spacing: -0.01em; margin-top: auto; }
+.hero-work.is-rest {
+  font: 500 10px/1 var(--font-ui);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+.hero-day.is-past  { opacity: 0.45; }
+.hero-day.is-today { background: var(--bg-deep); box-shadow: 0 0 0 2px var(--accent-deep); }
+
 @media (max-width: 760px) {
   .shell { grid-template-columns: 1fr; }
   .sidebar {
@@ -330,4 +423,5 @@ button { font: inherit; color: inherit; background: none; border: none; padding:
   .grid-3 { grid-template-columns: 1fr; }
   .grid-2-1 { grid-template-columns: 1fr; }
   .h-display { font-size: 44px; }
+  .cal-week-hero { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
