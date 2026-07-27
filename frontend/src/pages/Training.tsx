@@ -241,6 +241,8 @@ export default function Training() {
           Plan by Relentless Forward Commotion / Hart Strength &amp; Endurance Coaching. Workouts are
           shifted one day earlier than the source sheet so rest falls on Thursday and Sunday, which
           puts the long run on Friday. Both races stay on Saturday, with the Friday before as rest.
+          Weeks 8 and 9 run in that swapped order by design, so the cutback week falls during work
+          travel.
         </p>
       </section>
     </div>

@@ -52,11 +52,14 @@ export interface PlanWeek {
 }
 
 /**
- * Anchor: week 8's Tuesday cell — the plan's second run of the week — is
- * Mon Jul 27, 2026. Because of the −1 shift that puts week 8's first cell,
- * and therefore the week itself, on Sun Jul 26, 2026.
+ * Anchor: the 8th calendar slot begins on Sun Jul 26, 2026 — fixed by week 8's
+ * Tuesday cell being Mon Jul 27, 2026, which the −1 shift moves to that slot's
+ * first cell.
+ *
+ * Dates come from a row's position in ROWS, not its `week` number, so the two
+ * can diverge where the plan is reordered (see the 8/9 swap below).
  */
-export const ANCHOR_WEEK = 8;
+export const ANCHOR_SLOT = 7;
 export const ANCHOR_START = "2026-07-26";
 
 /** Weekday headers, matching the shifted Sunday → Saturday cell order. */
@@ -72,8 +75,10 @@ const ROWS: Row[] = [
   [5,  "BUILD",     ["REST", "7",  "5 (hills)", "7",          "REST", "16-18",     "1 hour 20 minutes"],  "45"],
   [6,  "BUILD",     ["REST", "7",  "6 (speed)", "7",          "REST", "16-18",     "1 hour 20 minutes"],  "46"],
   [7,  "BUILD",     ["REST", "7",  "6 (hills)", "7",          "REST", "18-20",     "1 hour 30 minutes"],  "49"],
-  [8,  "CUTBACK",   ["REST", "5",  "3",         "5",          "REST", "12",        "Active Recovery"],    "25 +AR"],
+  // Weeks 8 and 9 are swapped against the sheet: work travel falls on the
+  // second of the two, so the cutback is the week that gets missed.
   [9,  "BUILD",     ["REST", "8",  "6 (speed)", "8",          "REST", "22",        "1 hour 45 minutes"],  "54"],
+  [8,  "CUTBACK",   ["REST", "5",  "3",         "5",          "REST", "12",        "Active Recovery"],    "25 +AR"],
   [10, "BUILD",     ["REST", "10", "6 (hills)", "8",          "REST", "12",        "2 hours"],            "58"],
   [11, "BUILD",     ["REST", "8",  "6 (speed)", "8",          "REST", "24",        "1 hour 45 minutes"],  "56"],
   [12, "CUTBACK",   ["REST", "6",  "4",         "6",          "REST", "14",        "Active Recovery"],    "28 + AR"],
@@ -125,8 +130,8 @@ function effortFor(cell: string, index: number): Effort {
 
 const anchor = parseDate(ANCHOR_START);
 
-export const PLAN: PlanWeek[] = ROWS.map(([week, cycle, cells, total]) => {
-  const start = addDays(anchor, (week - ANCHOR_WEEK) * 7);
+export const PLAN: PlanWeek[] = ROWS.map(([week, cycle, cells, total], slot) => {
+  const start = addDays(anchor, (slot - ANCHOR_SLOT) * 7);
   return {
     week,
     cycle,
