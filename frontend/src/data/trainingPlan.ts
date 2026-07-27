@@ -16,6 +16,10 @@
  *     is 53 rather than the sheet's 59.
  *   - Week 24 (the 50-miler): nothing is dropped; the sheet's `CELEBRATE!` cell
  *     spills past the end of the grid — see CELEBRATION.
+ *
+ * Weeks 8 and 9 also carry the sheet's week 9 and week 8 workouts respectively,
+ * so the cutback falls during work travel. Only the workouts moved: the plan is
+ * still numbered 1…24 in calendar order.
  */
 
 export type Cycle = "BUILD" | "CUTBACK" | "TAPER" | "RACE WEEK";
@@ -52,51 +56,52 @@ export interface PlanWeek {
 }
 
 /**
- * Anchor: the 8th calendar slot begins on Sun Jul 26, 2026 — fixed by week 8's
- * Tuesday cell being Mon Jul 27, 2026, which the −1 shift moves to that slot's
- * first cell.
- *
- * Dates come from a row's position in ROWS, not its `week` number, so the two
- * can diverge where the plan is reordered (see the 8/9 swap below).
+ * Anchor: week 8 begins on Sun Jul 26, 2026 — fixed by its Tuesday cell being
+ * Mon Jul 27, 2026, which the −1 shift moves to that week's first cell.
  */
-export const ANCHOR_SLOT = 7;
+export const ANCHOR_WEEK = 8;
 export const ANCHOR_START = "2026-07-26";
 
 /** Weekday headers, matching the shifted Sunday → Saturday cell order. */
 export const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
-type Row = [week: number, cycle: Cycle, cells: string[], total: string];
+/**
+ * One row per week, in calendar order. Week number and date both come from a
+ * row's position here, so the plan is always numbered 1…24 consecutively — to
+ * reorder the plan, move a row and its number follows.
+ */
+type Row = [cycle: Cycle, cells: string[], total: string];
 
 const ROWS: Row[] = [
-  [1,  "BUILD",     ["REST", "6",  "4 (speed)", "6",          "REST", "10-12",     "60 minutes"],         "34"],
-  [2,  "BUILD",     ["REST", "6",  "4 (hills)", "6",          "REST", "12-14",     "1 hour 10 minutes"],  "37"],
-  [3,  "BUILD",     ["REST", "6",  "5 (speed)", "7",          "REST", "14-16",     "1 hour 10 minutes"],  "41"],
-  [4,  "CUTBACK",   ["REST", "4",  "3",         "5",          "REST", "10",        "Active Recovery"],    "22 +AR"],
-  [5,  "BUILD",     ["REST", "7",  "5 (hills)", "7",          "REST", "16-18",     "1 hour 20 minutes"],  "45"],
-  [6,  "BUILD",     ["REST", "7",  "6 (speed)", "7",          "REST", "16-18",     "1 hour 20 minutes"],  "46"],
-  [7,  "BUILD",     ["REST", "7",  "6 (hills)", "7",          "REST", "18-20",     "1 hour 30 minutes"],  "49"],
-  // Weeks 8 and 9 are swapped against the sheet: work travel falls on the
-  // second of the two, so the cutback is the week that gets missed.
-  [9,  "BUILD",     ["REST", "8",  "6 (speed)", "8",          "REST", "22",        "1 hour 45 minutes"],  "54"],
-  [8,  "CUTBACK",   ["REST", "5",  "3",         "5",          "REST", "12",        "Active Recovery"],    "25 +AR"],
-  [10, "BUILD",     ["REST", "10", "6 (hills)", "8",          "REST", "12",        "2 hours"],            "58"],
-  [11, "BUILD",     ["REST", "8",  "6 (speed)", "8",          "REST", "24",        "1 hour 45 minutes"],  "56"],
-  [12, "CUTBACK",   ["REST", "6",  "4",         "6",          "REST", "14",        "Active Recovery"],    "28 + AR"],
-  [13, "BUILD",     ["REST", "10", "6 (hills)", "8",          "REST", "22",        "2 hours"],            "58"],
-  [14, "BUILD",     ["REST", "12", "6 (speed)", "10",         "REST", "14",        "2.5 hours"],          "57"],
-  [15, "BUILD",     ["REST", "10", "7 (hills)", "8",          "REST", "26",        "2 hours"],            "63"],
-  [16, "CUTBACK",   ["REST", "7",  "4",         "7",          "REST", "14",        "Active Recovery"],    "32 + AR"],
-  [17, "BUILD",     ["REST", "10", "5",         "8",          "REST", "20",        "3 hours"],            "63"],
-  [18, "BUILD",     ["REST", "12", "8",         "10",         "REST", "24",        "1 hour 45 minutes"],  "64"],
-  [19, "CUTBACK",   ["REST", "8",  "4",         "8",          "REST", "14",        "Active Recovery"],    "34 + AR"],
+  ["BUILD",     ["REST", "6",  "4 (speed)", "6",          "REST", "10-12",     "60 minutes"],         "34"],
+  ["BUILD",     ["REST", "6",  "4 (hills)", "6",          "REST", "12-14",     "1 hour 10 minutes"],  "37"],
+  ["BUILD",     ["REST", "6",  "5 (speed)", "7",          "REST", "14-16",     "1 hour 10 minutes"],  "41"],
+  ["CUTBACK",   ["REST", "4",  "3",         "5",          "REST", "10",        "Active Recovery"],    "22 +AR"],
+  ["BUILD",     ["REST", "7",  "5 (hills)", "7",          "REST", "16-18",     "1 hour 20 minutes"],  "45"],
+  ["BUILD",     ["REST", "7",  "6 (speed)", "7",          "REST", "16-18",     "1 hour 20 minutes"],  "46"],
+  ["BUILD",     ["REST", "7",  "6 (hills)", "7",          "REST", "18-20",     "1 hour 30 minutes"],  "49"],
+  // Weeks 8 and 9 carry the sheet's week 9 and 8 workouts respectively: work
+  // travel falls on the second of the two, so the cutback is the week missed.
+  ["BUILD",     ["REST", "8",  "6 (speed)", "8",          "REST", "22",        "1 hour 45 minutes"],  "54"],
+  ["CUTBACK",   ["REST", "5",  "3",         "5",          "REST", "12",        "Active Recovery"],    "25 +AR"],
+  ["BUILD",     ["REST", "10", "6 (hills)", "8",          "REST", "12",        "2 hours"],            "58"],
+  ["BUILD",     ["REST", "8",  "6 (speed)", "8",          "REST", "24",        "1 hour 45 minutes"],  "56"],
+  ["CUTBACK",   ["REST", "6",  "4",         "6",          "REST", "14",        "Active Recovery"],    "28 + AR"],
+  ["BUILD",     ["REST", "10", "6 (hills)", "8",          "REST", "22",        "2 hours"],            "58"],
+  ["BUILD",     ["REST", "12", "6 (speed)", "10",         "REST", "14",        "2.5 hours"],          "57"],
+  ["BUILD",     ["REST", "10", "7 (hills)", "8",          "REST", "26",        "2 hours"],            "63"],
+  ["CUTBACK",   ["REST", "7",  "4",         "7",          "REST", "14",        "Active Recovery"],    "32 + AR"],
+  ["BUILD",     ["REST", "10", "5",         "8",          "REST", "20",        "3 hours"],            "63"],
+  ["BUILD",     ["REST", "12", "8",         "10",         "REST", "24",        "1 hour 45 minutes"],  "64"],
+  ["CUTBACK",   ["REST", "8",  "4",         "8",          "REST", "14",        "Active Recovery"],    "34 + AR"],
   // 50K pinned to Saturday; the sheet's Friday slot becomes rest and its
   // Sunday recovery run is dropped (total 59 → 53).
-  [20, "BUILD",     ["REST", "12", "4",         "6",          "REST", "REST",      "31 (50K)"],           "53"],
-  [21, "BUILD",     ["REST", "14", "8",         "10",         "REST", "16",        "2.5 hours"],          "63"],
-  [22, "TAPER",     ["REST", "10", "6",         "8",          "REST", "18",        "60 minutes"],         "48"],
-  [23, "TAPER",     ["REST", "8",  "4",         "8",          "REST", "10",        "60 minutes"],         "36"],
+  ["BUILD",     ["REST", "12", "4",         "6",          "REST", "REST",      "31 (50K)"],           "53"],
+  ["BUILD",     ["REST", "14", "8",         "10",         "REST", "16",        "2.5 hours"],          "63"],
+  ["TAPER",     ["REST", "10", "6",         "8",          "REST", "18",        "60 minutes"],         "48"],
+  ["TAPER",     ["REST", "8",  "4",         "8",          "REST", "10",        "60 minutes"],         "36"],
   // Race pinned to Saturday; the sheet's Friday long-run slot becomes rest.
-  [24, "RACE WEEK", ["REST", "4",  "REST",      "30 minutes", "REST", "REST",      "50 miles"],           "57"],
+  ["RACE WEEK", ["REST", "4",  "REST",      "30 minutes", "REST", "REST",      "50 miles"],           "57"],
 ];
 
 /** Local-midnight Date from YYYY-MM-DD. Avoids the UTC shift of `new Date(str)`. */
@@ -130,8 +135,9 @@ function effortFor(cell: string, index: number): Effort {
 
 const anchor = parseDate(ANCHOR_START);
 
-export const PLAN: PlanWeek[] = ROWS.map(([week, cycle, cells, total], slot) => {
-  const start = addDays(anchor, (slot - ANCHOR_SLOT) * 7);
+export const PLAN: PlanWeek[] = ROWS.map(([cycle, cells, total], i) => {
+  const week = i + 1;
+  const start = addDays(anchor, (week - ANCHOR_WEEK) * 7);
   return {
     week,
     cycle,
