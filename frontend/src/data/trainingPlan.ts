@@ -6,13 +6,16 @@
  * so the plan's two REST days land on Thursday and Sunday rather than Monday
  * and Friday. That uniform −1 shift means a plan week runs Sunday → Saturday,
  * so `cells` below is already in calendar order: index 0 is Sunday, index 6 is
- * Saturday. The long run consequently sits on Friday, including the week 20
- * tune-up 50K.
+ * Saturday. The long run consequently sits on Friday.
  *
- * Race week (24) is the one deviation: the 50-miler is pinned to Saturday
- * rather than shifted onto Friday, so Friday becomes an extra race-eve rest
- * day and the sheet's `CELEBRATE!` cell spills to the Sunday after — see
- * CELEBRATION.
+ * The two race weeks are the deviations — races stay on Saturday rather than
+ * being shifted onto Friday, and the freed Friday becomes a race-eve rest day:
+ *
+ *   - Week 20 (tune-up 50K): the sheet's Sunday recovery run is displaced by
+ *     the race and dropped rather than pushed into week 21, so the weekly total
+ *     is 53 rather than the sheet's 59.
+ *   - Week 24 (the 50-miler): nothing is dropped; the sheet's `CELEBRATE!` cell
+ *     spills past the end of the grid — see CELEBRATION.
  */
 
 export type Cycle = "BUILD" | "CUTBACK" | "TAPER" | "RACE WEEK";
@@ -81,7 +84,9 @@ const ROWS: Row[] = [
   [17, "BUILD",     ["REST", "10", "5",         "8",          "REST", "20",        "3 hours"],            "63"],
   [18, "BUILD",     ["REST", "12", "8",         "10",         "REST", "24",        "1 hour 45 minutes"],  "64"],
   [19, "CUTBACK",   ["REST", "8",  "4",         "8",          "REST", "14",        "Active Recovery"],    "34 + AR"],
-  [20, "BUILD",     ["REST", "12", "4",         "6",          "REST", "31 (50K)",  "60 minutes"],         "59"],
+  // 50K pinned to Saturday; the sheet's Friday slot becomes rest and its
+  // Sunday recovery run is dropped (total 59 → 53).
+  [20, "BUILD",     ["REST", "12", "4",         "6",          "REST", "REST",      "31 (50K)"],           "53"],
   [21, "BUILD",     ["REST", "14", "8",         "10",         "REST", "16",        "2.5 hours"],          "63"],
   [22, "TAPER",     ["REST", "10", "6",         "8",          "REST", "18",        "60 minutes"],         "48"],
   [23, "TAPER",     ["REST", "8",  "4",         "8",          "REST", "10",        "60 minutes"],         "36"],

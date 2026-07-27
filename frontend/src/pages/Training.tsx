@@ -239,8 +239,8 @@ export default function Training() {
 
         <p style={{ font: "500 11px/1.6 var(--font-mono)", color: "var(--fg-faint)", marginTop: 16, marginBottom: 0 }}>
           Plan by Relentless Forward Commotion / Hart Strength &amp; Endurance Coaching. Workouts are
-          shifted one day earlier than the source sheet so rest falls on Thursday and Sunday; the race
-          is pinned to Saturday.
+          shifted one day earlier than the source sheet so rest falls on Thursday and Sunday, which
+          puts the long run on Friday. Both races stay on Saturday, with the Friday before as rest.
         </p>
       </section>
     </div>
