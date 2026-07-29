@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   useTrainingReadiness,
   useTrainingStatus,
@@ -77,7 +77,9 @@ function RecentShoeRow({ shoe, rank, color }: { shoe: Shoe; rank: number; color:
   const overLimit = shoe.max_mi !== null && shoe.total_mi >= shoe.max_mi;
   const pct = shoe.max_mi ? (shoe.total_mi / shoe.max_mi) * 100 : null;
   const lastUsed = shoe.last_used ? new Date(shoe.last_used) : null;
-  const daysAgo = lastUsed ? Math.round((Date.now() - lastUsed.getTime()) / 86_400_000) : null;
+  // Sampled once per mount: reading the clock during render is impure.
+  const [now] = useState(() => Date.now());
+  const daysAgo = lastUsed ? Math.round((now - lastUsed.getTime()) / 86_400_000) : null;
   const barBg = overLimit ? "var(--bad)" : pct !== null && pct >= 80 ? "var(--warn)" : color;
   const badgeLabel = rank === 0 ? "Daily driver" : "2nd pair";
 

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useShoes } from "../api/client";
 import type { Shoe } from "../types/garmin";
 import ShoeArc from "../components/ShoeArc";
@@ -28,7 +28,9 @@ function ShoeCard({ shoe, rank, color }: { shoe: Shoe; rank: number; color: stri
   const overLimit = shoe.max_mi !== null && shoe.total_mi >= shoe.max_mi;
   const pct = shoe.max_mi ? (shoe.total_mi / shoe.max_mi) * 100 : 0;
   const lastUsed = shoe.last_used ? new Date(shoe.last_used) : null;
-  const daysAgo = lastUsed ? Math.round((Date.now() - lastUsed.getTime()) / 86_400_000) : null;
+  // Sampled once per mount: reading the clock during render is impure.
+  const [now] = useState(() => Date.now());
+  const daysAgo = lastUsed ? Math.round((now - lastUsed.getTime()) / 86_400_000) : null;
   const started = shoe.date_begin
     ? new Date(shoe.date_begin).toLocaleDateString("en-US", { month: "short", year: "numeric" })
     : null;

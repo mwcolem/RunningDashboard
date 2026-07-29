@@ -1,7 +1,6 @@
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,7 +17,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         gc.get_client()
     except Exception as e:
-        logging.getLogger(__name__).warning("Garmin login failed at startup: %s — will retry on first request", e)
+        logging.getLogger(__name__).warning(
+            "Garmin login failed at startup: %s — will retry on first request", e
+        )
     yield
 
 
@@ -41,12 +42,18 @@ app.include_router(stats.router)
 
 
 @app.exception_handler(GarminConnectTooManyRequestsError)
-async def too_many_requests_handler(request: Request, exc: GarminConnectTooManyRequestsError) -> JSONResponse:
-    return JSONResponse(status_code=429, content={"detail": "Garmin rate limit hit — try again later"})
+async def too_many_requests_handler(
+    request: Request, exc: GarminConnectTooManyRequestsError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=429, content={"detail": "Garmin rate limit hit — try again later"}
+    )
 
 
 @app.exception_handler(GarminConnectAuthenticationError)
-async def auth_error_handler(request: Request, exc: GarminConnectAuthenticationError) -> JSONResponse:
+async def auth_error_handler(
+    request: Request, exc: GarminConnectAuthenticationError
+) -> JSONResponse:
     return JSONResponse(status_code=401, content={"detail": "Garmin authentication failed"})
 
 
