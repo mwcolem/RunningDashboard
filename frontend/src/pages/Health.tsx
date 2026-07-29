@@ -36,7 +36,9 @@ function BigMetric({
 
 export default function Health() {
   const [offset, setOffset] = useState(0);
-  const date = toIso(new Date(Date.now() - offset * 86_400_000));
+  // Sampled once per mount: reading the clock during render is impure.
+  const [now] = useState(() => Date.now());
+  const date = toIso(new Date(now - offset * 86_400_000));
 
   const hr = useHeartRate(date);
   const hrv = useHrv(date);

@@ -66,7 +66,7 @@ cd backend && .venv/bin/mypy app/
 cd backend && .venv/bin/ruff check app/
 ```
 
-CI runs pytest + mypy on every push/PR via `.github/workflows/ci.yml`. A parallel job runs `npx tsc --noEmit` in `frontend/`.
+CI runs the full pre-PR checklist on every push/PR via `.github/workflows/ci.yml`, in two parallel jobs: `backend` (ruff → mypy → pytest) and `frontend` (eslint → `npm run build`).
 
 ## Pre-PR checklist
 
@@ -85,7 +85,7 @@ npm run lint
 npm run build
 ```
 
-`npm run build` (`tsc -b && vite build`) is the **only** real frontend type gate. `tsconfig.json` is a solution file (`files: []` + project references), so the CI job's `npx tsc --noEmit` type-checks zero files and passes vacuously — `tsc -b` is what actually compiles `tsconfig.app.json` and the 22 files under `src/`. A frontend type error will reach `master` unless you run the build locally.
+`npm run build` (`tsc -b && vite build`) is the **only** real frontend type gate, and CI now runs it. `tsconfig.json` is a solution file (`files: []` + project references), so `npx tsc --noEmit` against it type-checks zero files and passes vacuously — `tsc -b` is what actually compiles `tsconfig.app.json` and the files under `src/`. Never swap the CI build step back to `tsc --noEmit`.
 
 Also review `ROADMAP.md`, `README.md`, and `CLAUDE.md` and update them to reflect any new behaviour, changed constants, new endpoints, new modules, or completed work introduced by the branch.
 

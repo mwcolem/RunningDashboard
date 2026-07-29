@@ -7,8 +7,8 @@ on:
     branches: [master]
 
 jobs:
-  backend-test:
-    name: Backend tests
+  backend:
+    name: Backend lint, types, tests
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -25,14 +25,17 @@ jobs:
       - name: Install dependencies
         run: pip install -e ".[dev]"
 
-      - name: Run tests
-        run: pytest tests/ -v
+      - name: Lint
+        run: ruff check app/
 
       - name: Type check
         run: mypy app/
 
-  frontend-typecheck:
-    name: Frontend type check
+      - name: Run tests
+        run: pytest tests/ -v
+
+  frontend:
+    name: Frontend lint and build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -49,5 +52,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Type check
-        run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint
+
+      # `tsc -b` is the real type gate: tsconfig.json is a solution file
+      # (`files: []`), so `tsc --noEmit` against it checks zero files.
+      - name: Build
+        run: npm run build
