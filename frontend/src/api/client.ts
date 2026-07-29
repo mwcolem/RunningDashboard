@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   Activity,
   ActivitySplits,
@@ -27,6 +27,24 @@ async function fetchApi<T>(path: string, params?: Record<string, string>): Promi
     throw new Error(`API error: ${res.status} ${res.statusText}`);
   }
   return res.json();
+}
+
+/**
+ * Clears the backend TTL cache, then refetches every mounted query.
+ * Without the backend clear, a refetch would just re-serve cached data.
+ */
+export function useRefreshAll() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/refresh", { method: "POST" });
+      if (!res.ok) {
+        throw new Error(`Refresh failed: ${res.status} ${res.statusText}`);
+      }
+      return res.json() as Promise<{ cleared: number }>;
+    },
+    onSuccess: () => queryClient.invalidateQueries(),
+  });
 }
 
 export function useActivities(start = 0, limit = 20) {

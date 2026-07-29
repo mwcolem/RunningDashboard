@@ -32,6 +32,18 @@ def _store(key: str, data: Any) -> None:
     _cache[key] = (time.time(), data)
 
 
+def clear_cache() -> int:
+    """Drop every cached response so the next request refetches from Garmin.
+
+    Returns the number of entries evicted. The OAuth token store is untouched —
+    only data is discarded, so this does not trigger an SSO re-login.
+    """
+    count = len(_cache)
+    _cache.clear()
+    logger.info("Cache cleared (%d entries)", count)
+    return count
+
+
 def get_client() -> Garmin:
     global _client
     if _client is None:
