@@ -40,7 +40,7 @@ RunningDashboard/
 │           ├── activities.py # /api/activities, /api/activities/{id}/splits
 │           ├── gear.py       # /api/gear/shoes
 │           ├── health.py     # /api/health/* (7 endpoints)
-│           ├── stats.py      # /api/stats/mileage, /api/stats/goals
+│           ├── stats.py      # /api/stats/mileage, /api/stats/daily, /api/stats/goals
 │           └── training.py   # /api/training/* (4 endpoints)
 ├── frontend/
 │   ├── package.json
@@ -119,6 +119,7 @@ RunningDashboard/
 | Endpoint | Notes |
 |---|---|
 | `GET /api/stats/mileage` | Year/month/week totals in miles from YTD activity scan |
+| `GET /api/stats/daily?start=&end=` | Miles run per day over a range, keyed `YYYY-MM-DD`; days with no run omitted |
 | `GET /api/stats/goals` | Reads `goals.json`, joins with mileage data |
 
 **Gear** (`/api/gear`)
@@ -164,6 +165,7 @@ Tailwind CSS v4 via `@tailwindcss/vite` plugin. Desktop: sidebar nav. Mobile: fi
 10. ✅ **CI** — GitHub Actions: pytest + mypy (backend), tsc (frontend). Tests mock Garmin client; no credentials needed in CI.
 11. ✅ **Manual refresh** — `POST /api/refresh` clears the backend TTL cache, `useRefreshAll()` then invalidates every query. `RefreshButton` sits in the Dashboard header.
 12. ✅ **Training plan calendar** — Static 24-week 50-mile ultra plan (`frontend/src/data/trainingPlan.ts`) rendered as a dated calendar on a new Training tab. Frontend-only; no backend or Garmin data involved.
+13. ✅ **Actual mileage on the calendar** — `/api/stats/daily` returns per-day miles; the plan grid shows what was actually run under each past day and per week, with a ✓ on days that met their mileage target.
 
 ## Dev Workflow
 

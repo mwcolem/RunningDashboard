@@ -371,14 +371,29 @@ button { font: inherit; color: inherit; background: none; border: none; padding:
   text-transform: uppercase;
   color: var(--fg-faint);
 }
-.cal-cell.is-past  { opacity: 0.42; }
+/* Past days recede — but per-part, not as a whole cell, so the actual mileage
+   underneath stays legible against the faded plan text. */
+.cal-cell.is-past { border-left-color: color-mix(in oklch, var(--eff) 42%, transparent); }
+.cal-cell.is-past .cal-date,
+.cal-cell.is-past .cal-work { opacity: 0.42; }
 .cal-cell.is-today { border-color: var(--accent-deep); box-shadow: 0 0 0 1.5px var(--accent-deep); }
 .cal-row.is-current .cal-cell { background: var(--bg-deep); }
+
+/* Miles actually run — in a day cell, and again as a weekly total. */
+.cal-act {
+  margin-top: auto;
+  display: flex; align-items: center; gap: 3px;
+  font: 600 10px/1 var(--font-mono);
+  color: var(--fg-muted);
+}
+.cal-act.is-hit { color: var(--good); }
+.cal-act-tick { font-size: 10px; line-height: 1; }
 
 .cal-total {
   display: flex; flex-direction: column; justify-content: center; align-items: flex-end;
   padding: 6px 10px;
 }
+.cal-total .cal-act { margin-top: 6px; }
 .cal-total-n { font: 600 13px/1 var(--font-mono); }
 .cal-cycle { display: flex; align-items: center; justify-content: flex-end; }
 .cal-cycle .pill { font-size: 9px; padding: 3px 8px; letter-spacing: 0.1em; white-space: nowrap; }

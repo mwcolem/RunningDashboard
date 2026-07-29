@@ -3,11 +3,13 @@ import time
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
 import app.garmin_client as gc
 
 router = APIRouter(prefix="/api/stats")
+
+_ISO_DATE = r"^\d{4}-\d{2}-\d{2}$"
 
 GOALS_FILE = Path(__file__).resolve().parents[3] / "goals.json"
 _GOALS_TTL = 60.0
@@ -28,6 +30,15 @@ def _read_goals_file() -> list[dict[str, Any]]:
 @router.get("/mileage")
 def get_mileage() -> Any:
     return gc.get_mileage_summary()
+
+
+@router.get("/daily")
+def get_daily(
+    start: str = Query(pattern=_ISO_DATE),
+    end: str = Query(pattern=_ISO_DATE),
+) -> Any:
+    """Miles run per day over a date range, e.g. `{"2026-07-28": 6.12}`."""
+    return gc.get_daily_mileage(start, end)
 
 
 @router.get("/goals")

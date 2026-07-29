@@ -122,6 +122,9 @@ export interface MileageSummary {
   week_mi: number;
 }
 
+/** Miles run per day, keyed by YYYY-MM-DD. Days with no run are absent. */
+export type DailyMileage = Record<string, number>;
+
 export interface Goal {
   name: string;
   period: "year" | "month" | "week";

@@ -24,6 +24,20 @@ def test_mileage(client):
     assert data["week_mi"] == 12.1
 
 
+def test_daily(client):
+    daily = {"2026-05-25": 10.0, "2026-05-27": 12.0}
+    with patch("app.garmin_client.get_daily_mileage", return_value=daily) as mock:
+        response = client.get("/api/stats/daily?start=2026-05-24&end=2026-05-30")
+    assert response.status_code == 200
+    assert response.json() == daily
+    mock.assert_called_once_with("2026-05-24", "2026-05-30")
+
+
+def test_daily_rejects_malformed_dates(client):
+    response = client.get("/api/stats/daily?start=last-monday&end=2026-05-30")
+    assert response.status_code == 422
+
+
 def test_goals_pct(client, goals_file):
     with (
         patch("app.garmin_client.get_mileage_summary", return_value=MILEAGE),
