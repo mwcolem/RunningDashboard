@@ -9,6 +9,7 @@ import {
   useShoes,
 } from "../api/client";
 import ReadinessRing from "../components/ReadinessRing";
+import RefreshButton from "../components/RefreshButton";
 import WeeklyBars, { type BarData } from "../components/WeeklyBars";
 import { raceTime } from "../utils/fmt";
 import type { Activity, Goal, Shoe } from "../types/garmin";
@@ -193,6 +194,7 @@ export default function Dashboard() {
           <div className="eyebrow">{todayLabel}</div>
           <h1 className="h-1">Dashboard</h1>
         </div>
+        <RefreshButton />
       </header>
 
       {/* Readiness + Fitness + This Week */}

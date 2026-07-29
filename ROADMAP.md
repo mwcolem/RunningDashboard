@@ -162,7 +162,8 @@ Tailwind CSS v4 via `@tailwindcss/vite` plugin. Desktop: sidebar nav. Mobile: fi
 8. ✅ **Mileage + Goals** — `/api/stats/mileage`, `/api/stats/goals`, GoalBar component, local `goals.json` config.
 9. ✅ **Gear / Shoe tracker** — `/api/gear/shoes`, Gear page, last-used detection via activity gear scan, Recent Shoes panel on Dashboard.
 10. ✅ **CI** — GitHub Actions: pytest + mypy (backend), tsc (frontend). Tests mock Garmin client; no credentials needed in CI.
-11. ✅ **Training plan calendar** — Static 24-week 50-mile ultra plan (`frontend/src/data/trainingPlan.ts`) rendered as a dated calendar on a new Training tab. Frontend-only; no backend or Garmin data involved.
+11. ✅ **Manual refresh** — `POST /api/refresh` clears the backend TTL cache, `useRefreshAll()` then invalidates every query. `RefreshButton` sits in the Dashboard header.
+12. ✅ **Training plan calendar** — Static 24-week 50-mile ultra plan (`frontend/src/data/trainingPlan.ts`) rendered as a dated calendar on a new Training tab. Frontend-only; no backend or Garmin data involved.
 
 ## Dev Workflow
 

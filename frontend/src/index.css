@@ -270,6 +270,14 @@ button { font: inherit; color: inherit; background: none; border: none; padding:
 .btn-primary:hover { background: var(--accent-deep); color: var(--bg); }
 .btn-ghost { border-color: transparent; }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spin { animation: spin 900ms linear infinite; transform-origin: 50% 50%; }
+@media (prefers-reduced-motion: reduce) {
+  .spin { animation-duration: 2.4s; }
+}
+
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
