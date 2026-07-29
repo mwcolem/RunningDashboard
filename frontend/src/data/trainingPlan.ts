@@ -40,6 +40,12 @@ export interface PlanDay {
   effort: Effort;
   /** Calendar date this cell falls on, as YYYY-MM-DD. */
   date: string;
+  /**
+   * Miles that count as hitting this day, or null when the cell prescribes no
+   * distance — rest, `Active Recovery`, and the time-based recovery runs. Those
+   * days show actual mileage but are never marked hit or missed.
+   */
+  targetMi: number | null;
 }
 
 export interface PlanWeek {
@@ -133,6 +139,19 @@ function effortFor(cell: string, index: number): Effort {
   return "easy";
 }
 
+/**
+ * Miles a cell asks for, or null if it prescribes none.
+ *
+ * Time-based cells ("60 minutes", "2.5 hours") lead with a number that is not a
+ * distance, so they are excluded first. Range cells ("10-12") resolve to their
+ * lower bound: the plan reads as a floor, so 10 miles hits "10-12".
+ */
+function targetFor(cell: string): number | null {
+  if (/hour|minute/i.test(cell)) return null;
+  const m = /^(\d+)/.exec(cell);
+  return m ? Number(m[1]) : null;
+}
+
 const anchor = parseDate(ANCHOR_START);
 
 export const PLAN: PlanWeek[] = ROWS.map(([cycle, cells, total], i) => {
@@ -148,9 +167,14 @@ export const PLAN: PlanWeek[] = ROWS.map(([cycle, cells, total], i) => {
       label,
       effort: effortFor(label, i),
       date: toISO(addDays(start, i)),
+      targetMi: targetFor(label),
     })),
   };
 });
+
+/** First and last dates covered by the grid, for range-fetching actual mileage. */
+export const PLAN_START = PLAN[0].days[0].date;
+export const PLAN_END = PLAN[PLAN.length - 1].days[6].date;
 
 /** Race day — the 50-mile cell in the final week. Saturday by design. */
 export const RACE_DATE =
@@ -161,6 +185,7 @@ export const CELEBRATION: PlanDay = {
   label: "CELEBRATE!",
   effort: "celebrate",
   date: toISO(addDays(parseDate(RACE_DATE), 1)),
+  targetMi: null,
 };
 
 export const PEAK_MI = Math.max(...PLAN.map((w) => w.totalMi));

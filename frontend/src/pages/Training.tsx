@@ -1,8 +1,11 @@
 import { useMemo } from "react";
+import { useDailyMileage } from "../api/client";
 import {
   CELEBRATION,
   PEAK_MI,
   PLAN,
+  PLAN_END,
+  PLAN_START,
   RACE_DATE,
   WEEKDAYS,
   parseDate,
@@ -10,6 +13,7 @@ import {
   weekFor,
 } from "../data/trainingPlan";
 import type { Cycle, Effort, PlanDay, PlanWeek } from "../data/trainingPlan";
+import type { DailyMileage } from "../types/garmin";
 
 const CYCLE_PILL: Record<Cycle, string> = {
   BUILD: "",
@@ -26,19 +30,58 @@ function daysBetween(fromIso: string, toIso: string): number {
   return Math.round((parseDate(toIso).getTime() - parseDate(fromIso).getTime()) / 86_400_000);
 }
 
-/** A single calendar cell. `state` drives whether it reads as done, live, or upcoming. */
-function DayCell({ day, state }: { day: PlanDay; state: "past" | "today" | "future" }) {
+/**
+ * A single calendar cell. `state` drives whether it reads as done, live, or
+ * upcoming. `actual` is the miles logged that day, or undefined if nothing was
+ * run; it is only rendered once `daily` has loaded and the day has arrived.
+ */
+function DayCell({
+  day,
+  state,
+  actual,
+  loaded,
+}: {
+  day: PlanDay;
+  state: "past" | "today" | "future";
+  actual?: number;
+  loaded: boolean;
+}) {
   const rest = day.effort === "rest";
+  // A day with no prescribed distance is never judged — it just reports miles.
+  const hit = day.targetMi != null && actual != null && actual >= day.targetMi;
+  const show = loaded && state !== "future" && (actual != null || day.targetMi != null);
+
   return (
     <div className={`cal-cell is-${state} eff-${day.effort}`}>
       <div className="cal-date">{parseDate(day.date).getDate()}</div>
       <div className={`cal-work${rest ? " is-rest" : ""}`}>{day.label}</div>
+      {show && (
+        <div
+          className={`cal-act${hit ? " is-hit" : ""}`}
+          title={
+            actual != null
+              ? `Ran ${actual.toFixed(2)} mi${day.targetMi != null ? ` · target ${day.targetMi} mi` : ""}`
+              : `Nothing logged · target ${day.targetMi} mi`
+          }
+        >
+          {hit && <span className="cal-act-tick">✓</span>}
+          {actual != null ? actual.toFixed(1) : "—"}
+        </div>
+      )}
     </div>
   );
 }
 
-function WeekRow({ week, today }: { week: PlanWeek; today: string }) {
+function WeekRow({ week, today, daily }: { week: PlanWeek; today: string; daily?: DailyMileage }) {
   const isCurrent = today >= week.days[0].date && today <= week.days[6].date;
+  const started = week.days[0].date <= today;
+  const complete = week.days[6].date < today;
+
+  const actualMi = daily
+    ? week.days.reduce((sum, d) => sum + (daily[d.date] ?? 0), 0)
+    : 0;
+  // Mid-week totals are always short of plan, so only a finished week is judged.
+  const hitWeek = complete && actualMi >= week.totalMi;
 
   return (
     <div className={`cal-row${isCurrent ? " is-current" : ""}`}>
@@ -52,6 +95,8 @@ function WeekRow({ week, today }: { week: PlanWeek; today: string }) {
           key={day.date}
           day={day}
           state={day.date === today ? "today" : day.date < today ? "past" : "future"}
+          actual={daily?.[day.date]}
+          loaded={daily != null}
         />
       ))}
 
@@ -65,6 +110,15 @@ function WeekRow({ week, today }: { week: PlanWeek; today: string }) {
             }}
           />
         </div>
+        {daily && started && (
+          <div
+            className={`cal-act${hitWeek ? " is-hit" : ""}`}
+            title={`Ran ${actualMi.toFixed(2)} mi of ${week.totalMi} planned${complete ? "" : " so far"}`}
+          >
+            {hitWeek && <span className="cal-act-tick">✓</span>}
+            {actualMi.toFixed(1)} mi
+          </div>
+        )}
       </div>
 
       <div className="cal-cycle">
@@ -117,6 +171,13 @@ export default function Training() {
   const current = weekFor(today);
   const toRace = daysBetween(today, RACE_DATE);
   const done = PLAN.filter((w) => w.days[6].date < today).length;
+
+  // Actual mileage only exists up to today, so never ask Garmin past it.
+  const { data: daily } = useDailyMileage(
+    PLAN_START,
+    today < PLAN_END ? today : PLAN_END,
+    today >= PLAN_START,
+  );
 
   return (
     <div className="fade-in" style={{ display: "grid", gap: 16 }}>
@@ -221,7 +282,7 @@ export default function Training() {
             </div>
 
             {PLAN.map((week) => (
-              <WeekRow key={week.week} week={week} today={today} />
+              <WeekRow key={week.week} week={week} today={today} daily={daily} />
             ))}
 
             <div className="cal-celebrate">
@@ -238,6 +299,16 @@ export default function Training() {
         </div>
 
         <p style={{ font: "500 11px/1.6 var(--font-mono)", color: "var(--fg-faint)", marginTop: 16, marginBottom: 0 }}>
+          The figure under each past day is what you actually ran, from Garmin. A{" "}
+          <span className="cal-act is-hit" style={{ display: "inline-flex" }}>
+            <span className="cal-act-tick">✓</span>
+          </span>{" "}
+          marks a day that met its mileage target — ranges like 10-12 count at the lower end, and
+          rest, Active Recovery, and the time-based recovery runs prescribe no distance, so they
+          report miles without a verdict. Weekly totals are ticked only once the week is complete.
+        </p>
+
+        <p style={{ font: "500 11px/1.6 var(--font-mono)", color: "var(--fg-faint)", marginTop: 10, marginBottom: 0 }}>
           Plan by Relentless Forward Commotion / Hart Strength &amp; Endurance Coaching. Workouts are
           shifted one day earlier than the source sheet so rest falls on Thursday and Sunday, which
           puts the long run on Friday. Both races stay on Saturday, with the Friday before as rest.

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   Activity,
   ActivitySplits,
+  DailyMileage,
   Goal,
   HeartRateData,
   HrvData,
@@ -161,6 +162,16 @@ export function useMileageSummary() {
     queryKey: ["stats", "mileage"],
     queryFn: () => fetchApi<MileageSummary>("/api/stats/mileage"),
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+/** Per-day miles over a date range. Used by the training calendar. */
+export function useDailyMileage(start: string, end: string, enabled = true) {
+  return useQuery({
+    queryKey: ["stats", "daily", start, end],
+    queryFn: () => fetchApi<DailyMileage>("/api/stats/daily", { start, end }),
+    staleTime: 10 * 60 * 1000,
+    enabled,
   });
 }
 

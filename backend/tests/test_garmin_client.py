@@ -57,6 +57,33 @@ def test_mileage_empty_activities(mock_garmin):
 
 
 # ---------------------------------------------------------------------------
+# get_daily_mileage
+# ---------------------------------------------------------------------------
+
+def test_daily_mileage_sums_runs_per_day(mock_garmin):
+    mock_garmin.get_activities_by_date.return_value = [
+        activity("2026-05-25", 6.0),
+        activity("2026-05-25", 4.0),  # double day — summed
+        activity("2026-05-27", 12.0),
+    ]
+    result = gc.get_daily_mileage("2026-05-24", "2026-05-27")
+
+    assert result["2026-05-25"] == pytest.approx(10.0, abs=0.05)
+    assert result["2026-05-27"] == pytest.approx(12.0, abs=0.05)
+    assert "2026-05-26" not in result  # rest days are omitted, not zero-filled
+
+
+def test_daily_mileage_skips_activities_without_a_date(mock_garmin):
+    mock_garmin.get_activities_by_date.return_value = [
+        {"startTimeLocal": None, "distance": 5.0 * M_PER_MI},
+        activity("2026-05-25", 6.0),
+    ]
+    result = gc.get_daily_mileage("2026-05-24", "2026-05-27")
+
+    assert result == {"2026-05-25": pytest.approx(6.0, abs=0.05)}
+
+
+# ---------------------------------------------------------------------------
 # get_shoes
 # ---------------------------------------------------------------------------
 

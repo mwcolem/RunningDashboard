@@ -230,6 +230,31 @@ def get_mileage_summary() -> dict[str, float]:
     return result
 
 
+def get_daily_mileage(start: str, end: str) -> dict[str, float]:
+    """Running miles per calendar day between `start` and `end`, inclusive.
+
+    Keyed by the activity's local start date so the figures line up with the
+    training calendar's dates. Days with no running activity are omitted rather
+    than zero-filled; multiple runs on one day are summed.
+    """
+    key = f"daily_mileage:{start}:{end}"
+    if (cached := _cached(key, TTL_ACTIVITIES)) is not None:
+        return cast(dict[str, float], cached)
+
+    activities = get_client().get_activities_by_date(start, end, activitytype="running")
+
+    meters: dict[str, float] = {}
+    for a in activities:
+        day = (a.get("startTimeLocal") or "")[:10]
+        if not day:
+            continue
+        meters[day] = meters.get(day, 0.0) + (a.get("distance") or 0.0)
+
+    result = {day: round(m * 0.000621371, 2) for day, m in meters.items()}
+    _store(key, result)
+    return result
+
+
 def get_shoes() -> list[dict[str, Any]]:
     key = "shoes"
     if (cached := _cached(key, TTL_GEAR)) is not None:
