@@ -15,51 +15,17 @@
  *     the race and dropped rather than pushed into week 21, so the weekly total
  *     is 53 rather than the sheet's 59.
  *   - Week 24 (the 50-miler): nothing is dropped; the sheet's `CELEBRATE!` cell
- *     spills past the end of the grid — see CELEBRATION.
+ *     spills past the end of the grid — see `celebration`.
  *
  * Weeks 8 and 9 also carry the sheet's week 9 and week 8 workouts respectively,
  * so the cutback falls during work travel. Only the workouts moved: the plan is
  * still numbered 1…24 in calendar order.
+ *
+ * The shared model, classifiers, and date maths live in `./plan`.
  */
 
-export type Cycle = "BUILD" | "CUTBACK" | "TAPER" | "RACE WEEK";
-
-export type Effort =
-  | "rest"
-  | "easy"
-  | "speed"
-  | "hills"
-  | "long"
-  | "recovery"
-  | "race"
-  | "celebrate";
-
-export interface PlanDay {
-  /** Cell text exactly as printed in the source plan. */
-  label: string;
-  effort: Effort;
-  /** Calendar date this cell falls on, as YYYY-MM-DD. */
-  date: string;
-  /**
-   * Miles that count as hitting this day, or null when the cell prescribes no
-   * distance — rest, `Active Recovery`, and the time-based recovery runs. Those
-   * days show actual mileage but are never marked hit or missed.
-   */
-  targetMi: number | null;
-}
-
-export interface PlanWeek {
-  week: number;
-  cycle: Cycle;
-  /** Weekly total exactly as printed ("34", "25 +AR"). */
-  total: string;
-  /** Leading number of `total`, for sizing the volume bar. */
-  totalMi: number;
-  /** 7 days, Sunday → Saturday. */
-  days: PlanDay[];
-  /** Sunday of this week, as YYYY-MM-DD. */
-  start: string;
-}
+import { addDays, buildPlan, parseDate, toISO } from "./plan";
+import type { Cycle, PlanRow, TrainingPlan } from "./plan";
 
 /**
  * Anchor: week 8 begins on Sun Jul 26, 2026 — fixed by its Tuesday cell being
@@ -67,9 +33,6 @@ export interface PlanWeek {
  */
 export const ANCHOR_WEEK = 8;
 export const ANCHOR_START = "2026-07-26";
-
-/** Weekday headers, matching the shifted Sunday → Saturday cell order. */
-export const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
 /**
  * One row per week, in calendar order. Week number and date both come from a
@@ -110,87 +73,32 @@ const ROWS: Row[] = [
   ["RACE WEEK", ["REST", "4",  "REST",      "30 minutes", "REST", "REST",      "50 miles"],           "57"],
 ];
 
-/** Local-midnight Date from YYYY-MM-DD. Avoids the UTC shift of `new Date(str)`. */
-export function parseDate(iso: string): Date {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, m - 1, d);
-}
+const rows: PlanRow[] = ROWS.map(([cycle, cells, total]) => ({ cycle, cells, total }));
 
-export function toISO(d: Date): string {
-  const m = `${d.getMonth() + 1}`.padStart(2, "0");
-  const day = `${d.getDate()}`.padStart(2, "0");
-  return `${d.getFullYear()}-${m}-${day}`;
-}
-
-function addDays(d: Date, n: number): Date {
-  const c = new Date(d);
-  c.setDate(c.getDate() + n);
-  return c;
-}
-
-function effortFor(cell: string, index: number): Effort {
-  if (cell === "REST") return "rest";
-  if (cell === "CELEBRATE!") return "celebrate";
-  if (/50 miles|50K/.test(cell)) return "race";
-  if (/speed/.test(cell)) return "speed";
-  if (/hills/.test(cell)) return "hills";
-  if (index === 5) return "long";
-  if (index === 6) return "recovery";
-  return "easy";
-}
-
-/**
- * Miles a cell asks for, or null if it prescribes none.
- *
- * Time-based cells ("60 minutes", "2.5 hours") lead with a number that is not a
- * distance, so they are excluded first. Range cells ("10-12") resolve to their
- * lower bound: the plan reads as a floor, so 10 miles hits "10-12".
- */
-function targetFor(cell: string): number | null {
-  if (/hour|minute/i.test(cell)) return null;
-  const m = /^(\d+)/.exec(cell);
-  return m ? Number(m[1]) : null;
-}
-
-const anchor = parseDate(ANCHOR_START);
-
-export const PLAN: PlanWeek[] = ROWS.map(([cycle, cells, total], i) => {
-  const week = i + 1;
-  const start = addDays(anchor, (week - ANCHOR_WEEK) * 7);
-  return {
-    week,
-    cycle,
-    total,
-    totalMi: parseInt(total, 10),
-    start: toISO(start),
-    days: cells.map((label, i) => ({
-      label,
-      effort: effortFor(label, i),
-      date: toISO(addDays(start, i)),
-      targetMi: targetFor(label),
-    })),
-  };
+const base = buildPlan({
+  title: "Training",
+  eyebrow: "50-mile ultramarathon · 24 weeks",
+  rows,
+  start: toISO(addDays(parseDate(ANCHOR_START), (1 - ANCHOR_WEEK) * 7)),
+  notes: [
+    "Plan by Relentless Forward Commotion / Hart Strength & Endurance Coaching. Workouts are " +
+      "shifted one day earlier than the source sheet so rest falls on Thursday and Sunday, which " +
+      "puts the long run on Friday. Both races stay on Saturday, with the Friday before as rest. " +
+      "Weeks 8 and 9 carry the sheet's week 9 and 8 workouts, so the cutback falls during work travel.",
+  ],
 });
 
-/** First and last dates covered by the grid, for range-fetching actual mileage. */
-export const PLAN_START = PLAN[0].days[0].date;
-export const PLAN_END = PLAN[PLAN.length - 1].days[6].date;
-
-/** Race day — the 50-mile cell in the final week. Saturday by design. */
-export const RACE_DATE =
-  PLAN[PLAN.length - 1].days.find((d) => d.effort === "race")?.date ?? ANCHOR_START;
-
-/** The sheet's `CELEBRATE!` cell, pushed past the end of the grid by the Saturday race. */
-export const CELEBRATION: PlanDay = {
-  label: "CELEBRATE!",
-  effort: "celebrate",
-  date: toISO(addDays(parseDate(RACE_DATE), 1)),
-  targetMi: null,
+/**
+ * The plan, with the sheet's `CELEBRATE!` cell attached — the Saturday race
+ * pushes it past the end of the grid, so it is rendered under the calendar
+ * rather than in it.
+ */
+export const ULTRA_50: TrainingPlan = {
+  ...base,
+  celebration: {
+    label: "CELEBRATE!",
+    effort: "celebrate",
+    date: toISO(addDays(parseDate(base.raceDate), 1)),
+    targetMi: null,
+  },
 };
-
-export const PEAK_MI = Math.max(...PLAN.map((w) => w.totalMi));
-
-/** The week containing `today`, or null if today falls outside the plan. */
-export function weekFor(today: string): PlanWeek | null {
-  return PLAN.find((w) => today >= w.days[0].date && today <= w.days[6].date) ?? null;
-}

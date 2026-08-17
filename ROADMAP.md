@@ -166,6 +166,7 @@ Tailwind CSS v4 via `@tailwindcss/vite` plugin. Desktop: sidebar nav. Mobile: fi
 11. ✅ **Manual refresh** — `POST /api/refresh` clears the backend TTL cache, `useRefreshAll()` then invalidates every query. `RefreshButton` sits in the Dashboard header.
 12. ✅ **Training plan calendar** — Static 24-week 50-mile ultra plan (`frontend/src/data/trainingPlan.ts`) rendered as a dated calendar on a new Training tab. Frontend-only; no backend or Garmin data involved.
 13. ✅ **Actual mileage on the calendar** — `/api/stats/daily` returns per-day miles; the plan grid shows what was actually run under each past day and per week, with a ✓ on days that met their mileage target.
+14. ✅ **Plan tab generator** — The calendar moved into a reusable `PlanCalendar` component over a generic plan model (`frontend/src/data/plan.ts`), leaving `trainingPlan.ts` as data only. `frontend/scripts/new-plan.mjs` turns a TSV/CSV schedule plus an end date into a new plan tab — data module, page, route, and nav item. The existing Training tab renders byte-identical output to before the refactor.
 
 ## Dev Workflow
 

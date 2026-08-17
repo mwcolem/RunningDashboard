@@ -67,6 +67,23 @@ cd backend && .venv/bin/mypy app/
 cd backend && .venv/bin/ruff check app/
 ```
 
+## Training plans
+
+Each training plan gets its own tab. To add one, put the schedule in a TSV —
+one row per week, `cycle` then Sunday…Saturday then the weekly total, with cells
+in calendar order — and generate the tab:
+
+```bash
+cd frontend
+npm run new-plan -- schedule.tsv --name "Boston 2027" --end 2027-04-17
+npm run lint && npm run build
+```
+
+`--end` is the last day of the grid and must be a Saturday; every other date
+counts backwards from it. The script writes the plan data and page, and wires up
+the route and nav item. See `frontend/scripts/example-plan.tsv` for a runnable
+sample, and `npm run new-plan -- --help` for all options.
+
 ## Architecture
 
 See [`ROADMAP.md`](ROADMAP.md) for the full implementation plan and [`CLAUDE.md`](CLAUDE.md) for codebase guidance.
