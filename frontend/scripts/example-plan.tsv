@@ -1,0 +1,19 @@
+# Example schedule for scripts/new-plan.mjs. Tab-separated, one row per week:
+#   cycle | Sun | Mon | Tue | Wed | Thu | Fri | Sat | weekly total
+#
+# Cells are already in calendar order and are shown verbatim on the calendar.
+# A "# key: value" line sets an option, so this file is enough on its own:
+#
+#   npm run new-plan -- scripts/example-plan.tsv
+#
+# name: Spring Half
+# end: 2027-04-17
+# eyebrow: Half marathon · 6 weeks
+# note: Example plan shipped with the generator. Delete the tab once you have a real schedule.
+Cycle	Sun	Mon	Tue	Wed	Thu	Fri	Sat	Total
+BUILD	REST	5	4 (speed)	5	REST	8-10	40 minutes	26
+BUILD	REST	5	4 (hills)	6	REST	10-12	45 minutes	29
+BUILD	REST	6	5 (speed)	6	REST	12	50 minutes	33
+CUTBACK	REST	4	3	4	REST	8	Active Recovery	19 +AR
+TAPER	REST	5	4 (speed)	5	REST	8	30 minutes	23
+RACE WEEK	REST	4	3	REST	REST	REST	13.1 (half)	20
