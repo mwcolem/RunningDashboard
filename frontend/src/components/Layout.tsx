@@ -6,6 +6,7 @@ const navItems = [
   { to: "/dashboard", label: "Dashboard" },
   { to: "/activities", label: "Activities" },
   { to: "/training", label: "Training" },
+  { to: "/training-2", label: "Training 2" },
   { to: "/gear", label: "Gear" },
   { to: "/health", label: "Health" },
 ];
