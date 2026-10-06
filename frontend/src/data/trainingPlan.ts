@@ -18,8 +18,9 @@
  *     spills past the end of the grid — see `celebration`.
  *
  * Weeks 8 and 9 also carry the sheet's week 9 and week 8 workouts respectively,
- * so the cutback falls during work travel. Only the workouts moved: the plan is
- * still numbered 1…24 in calendar order.
+ * so the cutback falls during work travel, and weeks 18 and 19 likewise carry
+ * the sheet's week 19 and week 18 workouts. Only the workouts moved: the plan
+ * is still numbered 1…24 in calendar order.
  *
  * The shared model, classifiers, and date maths live in `./plan`.
  */
@@ -61,8 +62,10 @@ const ROWS: Row[] = [
   ["BUILD",     ["REST", "10", "7 (hills)", "8",          "REST", "26",        "2 hours"],            "63"],
   ["CUTBACK",   ["REST", "7",  "4",         "7",          "REST", "14",        "Active Recovery"],    "32 + AR"],
   ["BUILD",     ["REST", "10", "5",         "8",          "REST", "20",        "3 hours"],            "63"],
-  ["BUILD",     ["REST", "12", "8",         "10",         "REST", "24",        "1 hour 45 minutes"],  "64"],
+  // Weeks 18 and 19 carry the sheet's week 19 and 18 workouts respectively,
+  // moving the cutback a week earlier.
   ["CUTBACK",   ["REST", "8",  "4",         "8",          "REST", "14",        "Active Recovery"],    "34 + AR"],
+  ["BUILD",     ["REST", "12", "8",         "10",         "REST", "24",        "1 hour 45 minutes"],  "64"],
   // 50K pinned to Saturday; the sheet's Friday slot becomes rest and its
   // Sunday recovery run is dropped (total 59 → 53).
   ["BUILD",     ["REST", "12", "4",         "6",          "REST", "REST",      "31 (50K)"],           "53"],
