@@ -145,12 +145,12 @@ function effortFor(cell: string, index: number, longIndex: number, recoveryIndex
 /**
  * Miles a cell asks for, or null if it prescribes none.
  *
- * Time-based cells ("60 minutes", "2.5 hours") lead with a number that is not a
- * distance, so they are excluded first. Range cells ("10-12") resolve to their
+ * Time-based cells ("60 minutes", "2.5 hours", "1.5 hr run") lead with a
+ * number that is not a distance, so they are excluded first. Range cells ("10-12") resolve to their
  * lower bound: the plan reads as a floor, so 10 miles hits "10-12".
  */
 function targetFor(cell: string): number | null {
-  if (/hour|minute/i.test(cell)) return null;
+  if (/hour|minute|\bhrs?\b|\bmins?\b/i.test(cell)) return null;
   const m = /^(\d+(?:\.\d+)?)/.exec(cell);
   return m ? Number(m[1]) : null;
 }
