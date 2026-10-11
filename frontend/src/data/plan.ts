@@ -46,18 +46,25 @@ export interface PlanWeek {
   total: string;
   /** Leading number of `total`, for sizing the volume bar. */
   totalMi: number;
-  /** 7 days, Sunday → Saturday. */
+  /** 7 consecutive days — Sunday → Saturday unless a `gap` moved the week. */
   days: PlanDay[];
-  /** Sunday of this week, as YYYY-MM-DD. */
+  /** First day of this week, as YYYY-MM-DD. */
   start: string;
 }
 
 /** One week of a plan, before dates are applied. */
 export interface PlanRow {
   cycle: Cycle;
-  /** 7 cells, Sunday → Saturday. */
+  /** 7 consecutive cells, Sunday → Saturday unless a `gap` moved the week. */
   cells: string[];
   total: string;
+  /**
+   * Days left out of the grid before this week. A gap of 1 moves this and
+   * every later week from Sunday → Saturday to Monday → Sunday, for a plan that
+   * changes its week layout partway through. `startFromEnd` does not count
+   * gaps, so a plan using them anchors on its start date.
+   */
+  gap?: number;
 }
 
 export interface PlanSpec {
@@ -167,8 +174,10 @@ export function buildPlan(spec: PlanSpec): TrainingPlan {
   const recoveryIndex = spec.recoveryIndex ?? 6;
   const start = parseDate(spec.start);
 
+  let skipped = 0;
   const weeks: PlanWeek[] = spec.rows.map((row, i) => {
-    const weekStart = addDays(start, i * 7);
+    skipped += row.gap ?? 0;
+    const weekStart = addDays(start, i * 7 + skipped);
     return {
       week: i + 1,
       cycle: row.cycle,
@@ -200,7 +209,11 @@ export function buildPlan(spec: PlanSpec): TrainingPlan {
   };
 }
 
-/** The week containing `today`, or null if today falls outside the plan. */
+/**
+ * The week containing `today`, or null if today falls outside the plan. A day
+ * left out by a row's `gap` counts towards the week that follows it.
+ */
 export function weekFor(plan: TrainingPlan, today: string): PlanWeek | null {
-  return plan.weeks.find((w) => today >= w.days[0].date && today <= w.days[6].date) ?? null;
+  if (today < plan.start || today > plan.end) return null;
+  return plan.weeks.find((w) => today <= w.days[6].date) ?? null;
 }

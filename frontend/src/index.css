@@ -347,6 +347,8 @@ button { font: inherit; color: inherit; background: none; border: none; padding:
   margin-bottom: 4px;
   border-bottom: 1px solid var(--line);
 }
+/* A header repeated where a plan switches week layout. */
+.cal-row + .cal-head { margin-top: 14px; }
 
 .cal-wk { display: flex; flex-direction: column; justify-content: center; padding: 6px 8px 6px 0; }
 .cal-wk-n { font: 600 15px/1 var(--font-display); }
