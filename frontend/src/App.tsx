@@ -6,6 +6,7 @@ import Gear from "./pages/Gear";
 import Health from "./pages/Health";
 import Training from "./pages/Training";
 import Training2 from "./pages/Training2";
+import Training3 from "./pages/Training3";
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="gear" element={<Gear />} />
           <Route path="health" element={<Health />} />
           <Route path="training-2" element={<Training2 />} />
+          <Route path="training-3" element={<Training3 />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -168,6 +168,7 @@ Tailwind CSS v4 via `@tailwindcss/vite` plugin. Desktop: sidebar nav. Mobile: fi
 13. ✅ **Actual mileage on the calendar** — `/api/stats/daily` returns per-day miles; the plan grid shows what was actually run under each past day and per week, with a ✓ on days that met their mileage target.
 14. ✅ **Plan tab generator** — The calendar moved into a reusable `PlanCalendar` component over a generic plan model (`frontend/src/data/plan.ts`), leaving `trainingPlan.ts` as data only. `frontend/scripts/new-plan.mjs` turns a TSV/CSV schedule plus an end date into a new plan tab — data module, page, route, and nav item. The existing Training tab renders byte-identical output to before the refactor.
 15. ✅ **Training 2 tab** — A second plan generated with `new-plan.mjs`: 26 weeks ending in a 50K on Jan 9, 2027, with a half and a full marathon along the way. `targetFor()` now also treats `hr`/`min` cells as time-based.
+16. ✅ **Training 3 tab** — The Training 2 schedule run through `new-plan.mjs` again with a later end date: 26 weeks ending in a 50K on Mar 13, 2027.
 
 ## Dev Workflow
 
