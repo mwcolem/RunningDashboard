@@ -7,15 +7,25 @@
  *
  * Safe to hand-edit — regenerating overwrites it, so keep the schedule file in
  * step with any change made here.
+ *
+ * Hand-edited since generation: weeks run Monday → Sunday as on the source
+ * sheet, with rest on Monday and Friday and the long run on Sunday. The three
+ * races are pinned to Saturday rather than the sheet's Sunday — the half and
+ * the 50K have no Saturday run to displace, and the marathon and 50K weeks'
+ * Saturday 2 mi shakeout moves to Thursday. The generator only writes
+ * Sunday → Saturday weeks, so regenerating would undo this.
  */
 
 import { buildPlan, startFromEnd } from "./plan";
 import type { PlanRow, TrainingPlan } from "./plan";
 
-/** Last day of the grid. Week 1 is dated backwards from here. */
-export const END_DATE = "2027-01-09";
+/**
+ * Last day of the grid — the Sunday after the Sat Jan 9 50K. Week 1 is dated
+ * backwards from here, so it starts on a Monday.
+ */
+export const END_DATE = "2027-01-10";
 
-/** One row per week, Sunday → Saturday. Week numbers follow row order. */
+/** One row per week, Monday → Sunday. Week numbers follow row order. */
 const ROWS: PlanRow[] = [
   { cycle: "BUILD",     cells: ["REST", "3 mi run", "5 mi run",  "3 mi run", "REST", "5 mi pace",   "10 mi run"     ], total: "26" },
   { cycle: "BUILD",     cells: ["REST", "3 mi run", "5 mi run",  "3 mi run", "REST", "5 mi run",    "1.5 hr run"    ], total: "16 + 1.5 hr" },
@@ -25,7 +35,7 @@ const ROWS: PlanRow[] = [
   { cycle: "BUILD",     cells: ["REST", "3 mi run", "7 mi run",  "3 mi run", "REST", "7 mi pace",   "10 mi run"     ], total: "30" },
   { cycle: "BUILD",     cells: ["REST", "4 mi run", "8 mi run",  "4 mi run", "REST", "5 mi pace",   "16 mi run"     ], total: "37" },
   { cycle: "BUILD",     cells: ["REST", "4 mi run", "8 mi run",  "4 mi run", "REST", "8 mi run",    "2.5 hr run"    ], total: "24 + 2.5 hr" },
-  { cycle: "RACE WEEK", cells: ["REST", "4 mi run", "9 mi run",  "4 mi run", "REST", "REST",        "13.1 mi (race)"], total: "30.1" },
+  { cycle: "RACE WEEK", cells: ["REST", "4 mi run", "9 mi run",  "4 mi run", "REST", "13.1 mi (race)", "REST"        ], total: "30.1" },
   { cycle: "BUILD",     cells: ["REST", "4 mi run", "9 mi run",  "4 mi run", "REST", "9 mi pace",   "3 hr run"      ], total: "26 + 3 hr" },
   { cycle: "BUILD",     cells: ["REST", "5 mi run", "10 mi run", "5 mi run", "REST", "10 mi run",   "20 mi run"     ], total: "50" },
   { cycle: "CUTBACK",   cells: ["REST", "5 mi run", "6 mi run",  "5 mi run", "REST", "6 mi pace",   "2 hr run"      ], total: "22 + 2 hr" },
@@ -34,7 +44,7 @@ const ROWS: PlanRow[] = [
   { cycle: "BUILD",     cells: ["REST", "5 mi run", "10 mi run", "5 mi run", "REST", "10 mi pace",  "20 mi run"     ], total: "50" },
   { cycle: "BUILD",     cells: ["REST", "5 mi run", "8 mi run",  "5 mi run", "REST", "10 mi pace",  "3 hr run"      ], total: "28 + 3 hr" },
   { cycle: "TAPER",     cells: ["REST", "4 mi run", "6 mi run",  "4 mi run", "REST", "4 mi pace",   "8 mi run"      ], total: "26" },
-  { cycle: "RACE WEEK", cells: ["REST", "3 mi run", "4 mi run",  "REST",     "REST", "2 mi run",    "26.2 mi (race)"], total: "35.2" },
+  { cycle: "RACE WEEK", cells: ["REST", "3 mi run", "4 mi run",  "2 mi run", "REST", "26.2 mi (race)", "REST"        ], total: "35.2" },
   { cycle: "RECOVERY",  cells: ["REST", "REST",     "REST",      "3 mi run", "REST", "1.0 hr run",  "1.0 hr run"    ], total: "3 + 2 hr" },
   { cycle: "BUILD",     cells: ["REST", "3 mi run", "10 mi run", "3 mi run", "REST", "1.0 hr pace", "3.0 hr run"    ], total: "16 + 4 hr" },
   { cycle: "BUILD",     cells: ["REST", "3 mi run", "6 mi run",  "3 mi run", "REST", "1.5 hr run",  "2.0 hr run"    ], total: "12 + 3.5 hr" },
@@ -42,7 +52,7 @@ const ROWS: PlanRow[] = [
   { cycle: "BUILD",     cells: ["REST", "4 mi run", "7 mi run",  "4 mi run", "REST", "2.0 hr run",  "3.0 hr run"    ], total: "15 + 5 hr" },
   { cycle: "BUILD",     cells: ["REST", "4 mi run", "10 mi run", "4 mi run", "REST", "2.0 hr pace", "5.0 hr run"    ], total: "18 + 7 hr" },
   { cycle: "TAPER",     cells: ["REST", "4 mi run", "8 mi run",  "4 mi run", "REST", "1.0 hr run",  "1.0 hr run"    ], total: "16 + 2 hr" },
-  { cycle: "RACE WEEK", cells: ["REST", "4 mi run", "4 mi run",  "REST",     "REST", "2 mi run",    "31.1 mi (race)"], total: "41.1" },
+  { cycle: "RACE WEEK", cells: ["REST", "4 mi run", "4 mi run",  "2 mi run", "REST", "31.1 mi (race)", "REST"        ], total: "41.1" },
 ];
 
 export const TRAINING_2: TrainingPlan = buildPlan({
@@ -52,7 +62,7 @@ export const TRAINING_2: TrainingPlan = buildPlan({
   start: startFromEnd(END_DATE, ROWS.length),
   longIndex: 6,
   notes: [
-    "Source sheet runs Monday → Sunday; every workout is shifted one day earlier so rest falls on Sunday and Thursday and the long run and races land on Saturday.",
+    "Weeks run Monday → Sunday as on the source sheet: rest on Monday and Friday, long run on Sunday. Races are moved to Saturday, with the race-week 2 mi shakeout on Thursday.",
     "Weekly totals count mileage cells only; time-based runs are listed after the +.",
   ],
 });

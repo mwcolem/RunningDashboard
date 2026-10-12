@@ -170,6 +170,7 @@ Tailwind CSS v4 via `@tailwindcss/vite` plugin. Desktop: sidebar nav. Mobile: fi
 15. ✅ **Training 2 tab** — A second plan generated with `new-plan.mjs`: 26 weeks ending in a 50K on Jan 9, 2027, with a half and a full marathon along the way. `targetFor()` now also treats `hr`/`min` cells as time-based.
 16. ✅ **Training 3 tab** — The Training 2 schedule run through `new-plan.mjs` again with a later end date: 26 weeks ending in a 50K on Mar 13, 2027.
 17. ✅ **Training tab back to Monday/Friday rest** — From week 19 the 50-mile plan follows the source sheet's days again (rest Mon/Fri, long run Sat, weeks Mon → Sun); weeks 1–18 keep the shifted layout they were run on. Plan rows gained an optional `gap`, and `PlanCalendar` repeats its weekday header where the layout changes.
+18. ✅ **Training 2 back to Monday/Friday rest** — All 26 weeks of Training 2 run Monday → Sunday as on the source sheet (rest Mon/Fri, long run Sun); the half, marathon and 50K stay on Saturday.
 
 ## Dev Workflow
 
