@@ -2,20 +2,21 @@
  * 50-mile ultramarathon training plan — 24 weeks.
  * Source: Relentless Forward Commotion / Hart Strength & Endurance Coaching (2019).
  *
- * Cells are transcribed verbatim from the sheet, then shifted one day earlier
- * so the plan's two REST days land on Thursday and Sunday rather than Monday
- * and Friday. That uniform −1 shift means a plan week runs Sunday → Saturday,
- * so `cells` below is already in calendar order: index 0 is Sunday, index 6 is
- * Saturday. The long run consequently sits on Friday.
+ * Cells are transcribed verbatim from the sheet, Monday → Sunday. The plan
+ * runs in two layouts:
  *
- * The two race weeks are the deviations — races stay on Saturday rather than
- * being shifted onto Friday, and the freed Friday becomes a race-eve rest day:
+ *   - Weeks 1–18 shift every workout one day earlier, so rest falls on Sunday
+ *     and Thursday and a week runs Sunday → Saturday with the long run on
+ *     Friday. These are the weeks as they were actually run.
+ *   - Weeks 19–24 follow the sheet's own days: rest on Monday and Friday, long
+ *     run on Saturday, recovery run on Sunday, so a week runs Monday → Sunday.
+ *     The switch leaves Sun Oct 11, 2026 between weeks 18 and 19 as an extra
+ *     rest day (the `gap` on week 19).
  *
- *   - Week 20 (tune-up 50K): the sheet's Sunday recovery run is displaced by
- *     the race and dropped rather than pushed into week 21, so the weekly total
- *     is 53 rather than the sheet's 59.
- *   - Week 24 (the 50-miler): nothing is dropped; the sheet's `CELEBRATE!` cell
- *     spills past the end of the grid — see `celebration`.
+ * Because each shifted row is the sheet's Monday → Sunday cells laid on Sunday
+ * → Saturday, rows read the same in both layouts — only their dates differ.
+ * Both races land on Saturday as the sheet has them, and the 50-miler's
+ * `CELEBRATE!` falls on the final Sunday, inside the grid.
  *
  * Weeks 8 and 9 also carry the sheet's week 9 and week 8 workouts respectively,
  * so the cutback falls during work travel, and weeks 18 and 19 likewise carry
@@ -30,7 +31,8 @@ import type { Cycle, PlanRow, TrainingPlan } from "./plan";
 
 /**
  * Anchor: week 8 begins on Sun Jul 26, 2026 — fixed by its Tuesday cell being
- * Mon Jul 27, 2026, which the −1 shift moves to that week's first cell.
+ * Mon Jul 27, 2026, which the −1 shift moves to that week's first cell. Later
+ * weeks follow on from it, plus week 19's one-day gap.
  */
 export const ANCHOR_WEEK = 8;
 export const ANCHOR_START = "2026-07-26";
@@ -40,7 +42,7 @@ export const ANCHOR_START = "2026-07-26";
  * row's position here, so the plan is always numbered 1…24 consecutively — to
  * reorder the plan, move a row and its number follows.
  */
-type Row = [cycle: Cycle, cells: string[], total: string];
+type Row = [cycle: Cycle, cells: string[], total: string, gap?: number];
 
 const ROWS: Row[] = [
   ["BUILD",     ["REST", "6",  "4 (speed)", "6",          "REST", "10-12",     "60 minutes"],         "34"],
@@ -65,43 +67,28 @@ const ROWS: Row[] = [
   // Weeks 18 and 19 carry the sheet's week 19 and 18 workouts respectively,
   // moving the cutback a week earlier.
   ["CUTBACK",   ["REST", "8",  "4",         "8",          "REST", "14",        "Active Recovery"],    "34 + AR"],
-  ["BUILD",     ["REST", "12", "8",         "10",         "REST", "24",        "1 hour 45 minutes"],  "64"],
-  // 50K pinned to Saturday; the sheet's Friday slot becomes rest and its
-  // Sunday recovery run is dropped (total 59 → 53).
-  ["BUILD",     ["REST", "12", "4",         "6",          "REST", "REST",      "31 (50K)"],           "53"],
+  // From week 19 the weeks run Monday → Sunday, as on the sheet. The gap of 1
+  // leaves Sun Oct 11 out of the grid as a rest day between the two layouts.
+  ["BUILD",     ["REST", "12", "8",         "10",         "REST", "24",        "1 hour 45 minutes"],  "64", 1],
+  ["BUILD",     ["REST", "12", "4",         "6",          "REST", "31 (50K)",  "60 minutes"],         "59"],
   ["BUILD",     ["REST", "14", "8",         "10",         "REST", "16",        "2.5 hours"],          "63"],
   ["TAPER",     ["REST", "10", "6",         "8",          "REST", "18",        "60 minutes"],         "48"],
   ["TAPER",     ["REST", "8",  "4",         "8",          "REST", "10",        "60 minutes"],         "36"],
-  // Race pinned to Saturday; the sheet's Friday long-run slot becomes rest.
-  ["RACE WEEK", ["REST", "4",  "REST",      "30 minutes", "REST", "REST",      "50 miles"],           "57"],
+  ["RACE WEEK", ["REST", "4",  "REST",      "30 minutes", "REST", "50 miles",  "CELEBRATE!"],         "57"],
 ];
 
-const rows: PlanRow[] = ROWS.map(([cycle, cells, total]) => ({ cycle, cells, total }));
+const rows: PlanRow[] = ROWS.map(([cycle, cells, total, gap]) => ({ cycle, cells, total, gap }));
 
-const base = buildPlan({
+export const ULTRA_50: TrainingPlan = buildPlan({
   title: "Training",
   eyebrow: "50-mile ultramarathon · 24 weeks",
   rows,
   start: toISO(addDays(parseDate(ANCHOR_START), (1 - ANCHOR_WEEK) * 7)),
   notes: [
-    "Plan by Relentless Forward Commotion / Hart Strength & Endurance Coaching. Workouts are " +
-      "shifted one day earlier than the source sheet so rest falls on Thursday and Sunday, which " +
-      "puts the long run on Friday. Both races stay on Saturday, with the Friday before as rest. " +
+    "Plan by Relentless Forward Commotion / Hart Strength & Endurance Coaching. Weeks 1–18 are " +
+      "shifted one day earlier than the source sheet, so rest falls on Sunday and Thursday and the " +
+      "long run on Friday. From week 19 the plan follows the sheet's own days — rest on Monday and " +
+      "Friday, long run on Saturday — with Sun Oct 11 as an extra rest day between the two layouts. " +
       "Weeks 8 and 9 carry the sheet's week 9 and 8 workouts, so the cutback falls during work travel.",
   ],
 });
-
-/**
- * The plan, with the sheet's `CELEBRATE!` cell attached — the Saturday race
- * pushes it past the end of the grid, so it is rendered under the calendar
- * rather than in it.
- */
-export const ULTRA_50: TrainingPlan = {
-  ...base,
-  celebration: {
-    label: "CELEBRATE!",
-    effort: "celebrate",
-    date: toISO(addDays(parseDate(base.raceDate), 1)),
-    targetMi: null,
-  },
-};

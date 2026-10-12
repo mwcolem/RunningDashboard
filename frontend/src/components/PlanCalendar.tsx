@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import { useDailyMileage } from "../api/client";
 import { WEEKDAYS, parseDate, toISO, weekFor } from "../data/plan";
 import type { Effort, PlanDay, PlanWeek, TrainingPlan } from "../data/plan";
@@ -135,6 +135,35 @@ function WeekRow({
   );
 }
 
+function weekday(iso: string): string {
+  return WEEKDAYS[parseDate(iso).getDay()];
+}
+
+/**
+ * Column headers, labelled from the week's own dates. The grid repeats this
+ * wherever a plan switches week layout, so every row sits under the right days.
+ */
+function HeadRow({ week }: { week: PlanWeek }) {
+  return (
+    <div className="cal-row cal-head">
+      <div className="cal-wk">
+        <div className="eyebrow">Wk</div>
+      </div>
+      {week.days.map((d) => (
+        <div key={d.date} className="eyebrow" style={{ padding: "0 8px" }}>
+          {weekday(d.date)}
+        </div>
+      ))}
+      <div className="eyebrow" style={{ textAlign: "right" }}>
+        Total
+      </div>
+      <div className="eyebrow" style={{ textAlign: "right" }}>
+        Cycle
+      </div>
+    </div>
+  );
+}
+
 function SummaryCell({
   label,
   value,
@@ -253,7 +282,7 @@ export default function PlanCalendar({ plan }: { plan: TrainingPlan }) {
                   day.date < today ? " is-past" : ""
                 }`}
               >
-                <div className="eyebrow">{WEEKDAYS[parseDate(day.date).getDay()]}</div>
+                <div className="eyebrow">{weekday(day.date)}</div>
                 <div className="hero-date num">{monthDay(day.date)}</div>
                 <div className={`hero-work${day.effort === "rest" ? " is-rest" : ""}`}>{day.label}</div>
               </div>
@@ -276,25 +305,13 @@ export default function PlanCalendar({ plan }: { plan: TrainingPlan }) {
 
         <div className="cal-scroll">
           <div className="cal">
-            <div className="cal-row cal-head">
-              <div className="cal-wk">
-                <div className="eyebrow">Wk</div>
-              </div>
-              {WEEKDAYS.map((d) => (
-                <div key={d} className="eyebrow" style={{ padding: "0 8px" }}>
-                  {d}
-                </div>
-              ))}
-              <div className="eyebrow" style={{ textAlign: "right" }}>
-                Total
-              </div>
-              <div className="eyebrow" style={{ textAlign: "right" }}>
-                Cycle
-              </div>
-            </div>
-
-            {plan.weeks.map((week) => (
-              <WeekRow key={week.week} week={week} today={today} daily={daily} peakMi={plan.peakMi} />
+            {plan.weeks.map((week, i) => (
+              <Fragment key={week.week}>
+                {(i === 0 || weekday(week.start) !== weekday(plan.weeks[i - 1].start)) && (
+                  <HeadRow week={week} />
+                )}
+                <WeekRow week={week} today={today} daily={daily} peakMi={plan.peakMi} />
+              </Fragment>
             ))}
 
             {plan.celebration && (
