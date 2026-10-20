@@ -11,6 +11,7 @@ import {
 import ReadinessRing from "../components/ReadinessRing";
 import RefreshButton from "../components/RefreshButton";
 import WeeklyBars, { type BarData } from "../components/WeeklyBars";
+import { toISO } from "../data/plan";
 import { raceTime } from "../utils/fmt";
 import type { Activity, Goal, Shoe } from "../types/garmin";
 
@@ -31,11 +32,14 @@ function computeWeekBars(activities: Activity[]): BarData[] {
   weekStart.setDate(today.getDate() - daysFromMon);
   weekStart.setHours(0, 0, 0, 0);
 
+  // Bucket by local calendar day. `startTimeLocal` is already local wall time,
+  // so its date prefix is the day; toISOString() would shift evening runs into
+  // tomorrow's UTC date.
+  const weekStartKey = toISO(weekStart);
   const dayMap: Record<string, { mi: number; kind: string }> = {};
   for (const a of activities) {
-    const d = new Date(a.startTimeLocal);
-    if (d >= weekStart) {
-      const key = d.toISOString().slice(0, 10);
+    const key = a.startTimeLocal.slice(0, 10);
+    if (key >= weekStartKey) {
       const existing = dayMap[key];
       const m = a.distance / M_PER_MI;
       dayMap[key] = { mi: (existing?.mi ?? 0) + m, kind: existing?.kind ?? deriveType(a) };
@@ -46,8 +50,7 @@ function computeWeekBars(activities: Activity[]): BarData[] {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
     d.setDate(weekStart.getDate() + i);
-    const key = d.toISOString().slice(0, 10);
-    const entry = dayMap[key];
+    const entry = dayMap[toISO(d)];
     const isFuture = d > today;
     return {
       day: dayNames[i],
